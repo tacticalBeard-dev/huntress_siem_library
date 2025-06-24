@@ -1,8 +1,8 @@
-title: Authorization Failure
+title: Authorization Success
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Duo and the result is denied.
+  Find all logs where the event provider is equal to Duo and the result is success.
 author: tacticalbeard-dev
 date: 2025/06/24
 modified: 2025/06/24

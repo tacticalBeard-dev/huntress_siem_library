@@ -1,0 +1,33 @@
+title: Duo Type SMS
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Duo and the result type is SMS.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2025/06/24
+references:
+  - "https://support.huntress.io/hc/en-us/articles/36516946793107-API-Cisco-Duo"
+  - "https://duo.com/docs/adminapi"
+tags:
+  - cybersecurity
+  - ioc
+  - ciscoduo
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Cisco Duo
+analyst_notes: >
+  This will identify when SMS is used to provide authentication which is considered a weak form of secondary authentication.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Duo"
+      AND duo.type=="sms"
+  | KEEP
+      duo.context,
+      event.category,
+      duo.type,
+      duo.phone
+  | LIMIT
+      10
