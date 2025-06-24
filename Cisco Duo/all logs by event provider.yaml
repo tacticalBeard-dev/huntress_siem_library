@@ -2,12 +2,11 @@ title: All Logs by Event Provider
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Duo
+  Find all logs where the event provider is equal to Duo.
 author: tacticalbeard-dev
 date: 2025/06/23
 modified: 2025/06/23
 references:
-  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
   - "https://support.huntress.io/hc/en-us/articles/36516946793107-API-Cisco-Duo"
   - "https://duo.com/docs/adminapi"
 tags:
@@ -18,7 +17,9 @@ logsource:
   platform: Huntress SIEM
   type: Cisco Duo
 analyst_notes: >
-  This will give you a good starting point for finding the raw logs
+  This will give you a good starting point for finding the raw logs.
+  You can use this information to verify logs are being ingested and retained.
+  The raw logs will also assist with creating other queries.
 query: >
   from logs 
   | WHERE
