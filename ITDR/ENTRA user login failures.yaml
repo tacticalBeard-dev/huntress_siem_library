@@ -1,8 +1,8 @@
-title: ENTRA User Login Blocked by Conditional Access
+title: ENTRA User Login Failures
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to ITDR and the logon error is Blocked By Conditional Access.
+  Find all logs where the event provider is equal to ITDR and the operation is User Login Failed.
 author: tacticalbeard-dev
 date: 2025/06/24
 modified: 2025/06/24
@@ -13,20 +13,21 @@ tags:
   - cybersecurity
   - microsoft.entra.id
   - azure.active.directory
-  - cap
+  - ioc
 logsource:
   language: ESQL
   platform: Huntress SIEM
   type: ITDR
 analyst_notes: >
-  It is important to know the reason and CA policy conditions that triggered this error.
-  The client IP and device properties are also useful when compared to baseline events.
+  A failed login by itself is not necessarily and indicator of compromise.
+  Excessive failed logins can indicate non-human attempts to access a resource.
+  When followed by a successful login from the same source IP and device this can present suspicious activity.
 query: >
   from logs
   | WHERE
       event.provider=="ITDR"
   | WHERE
-      itdr.LogonError=="BlockedByConditionalAccess"
+      itdr.Operation=="UserLoginFailed"
   | KEEP
       itdr.Operation,
       itdr.UserKey,
