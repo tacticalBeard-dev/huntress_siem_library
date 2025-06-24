@@ -9,6 +9,8 @@ Repository for sharing and source control for Huntress SIEM queries.
 ## Key Components
 
 *   <a href="url">https://www.elastic.co/docs/explore-analyze/query-filter/languages</a>
+*   <a href="url">https://www.elastic.co/docs/reference/query-languages/esql/esql-syntax</a>
+*   <a href="url">https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide</a>
 
 ## Key Features
 
@@ -18,7 +20,8 @@ Repository for sharing and source control for Huntress SIEM queries.
 
 ## Tech Stack
 
-*   ESQL (Elastic Stack Query Language)
+*   ES|QL (Elastic Stack Query Language)
+*   Huntress SIEM
 
 ## YAML format
 title: 
