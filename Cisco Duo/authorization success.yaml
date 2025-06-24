@@ -1,0 +1,39 @@
+title: Authorization Failure
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Duo and the result is denied.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2025/06/24
+references:
+  - "https://support.huntress.io/hc/en-us/articles/36516946793107-API-Cisco-Duo"
+  - "https://duo.com/docs/adminapi"
+tags:
+  - cybersecurity
+  - ioc
+  - ciscoduo
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Cisco Duo
+analyst_notes: >
+  This will give you a good idea of location and frequency for successful authorization requests which can help to identify a legitimate baseline for your users.  
+  You can use this information to detect impossible travel and abnormal location based behavior.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Duo"
+      AND duo.result=="success"
+  | KEEP
+      duo.access_device.ip,
+      duo.access_device.location.city,
+      duo.access_device.location.state,
+      duo.access_device.location.country,
+      duo.application.name,
+      duo.email,
+      duo.event_type,
+      duo.reason,
+      duo.result
+  | LIMIT
+      10
