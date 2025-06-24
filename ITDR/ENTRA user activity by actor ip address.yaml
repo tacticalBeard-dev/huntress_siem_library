@@ -1,0 +1,38 @@
+title: ENTRA User Activity by Actor IP Address
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to ITDR and the client IP address matches a provided value.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2025/06/24
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+tags:
+  - cybersecurity
+  - microsoft.entra.id
+  - azure.active.directory
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: ITDR
+analyst_notes: >
+  Make sure to change the IP address in the query from 8.8.8.8 to whatever IP you want to look up.
+  This can be useful for verifying known trusted IPs or known bad IPs.
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+  | WHERE
+      itdr.ClientIPAddress=="8.8.8.8"
+      OR itdr.ClientIP=="8.8.8.8"
+  | KEEP
+      itdr.Operation,
+      itdr.OperationProperties,
+      itdr.UserKey,
+      itdr.UserId,
+      itdr.ClientIPAddress,
+      itdr.ClientIP
+  | LIMIT
+      10
