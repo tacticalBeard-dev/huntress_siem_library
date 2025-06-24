@@ -1,0 +1,38 @@
+title: ENTRA User Login Blocked by Conditional Access
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to ITDR and the logon error is Blocked By Conditional Access.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2025/06/24
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+tags:
+  - cybersecurity
+  - microsoft.entra.id
+  - azure.active.directory
+  - cap
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: ITDR
+analyst_notes: >
+  It is important to know the reason and CA policy conditions that triggered this error.
+  The client IP and device properties are also useful when compared to baseline events.
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+  | WHERE
+      itdr.LogonError=="BlockedByConditionalAccess"
+  | KEEP
+      itdr.Operation,
+      itdr.UserKey,
+      itdr.UserId,
+      itdr.ClientIP,
+      itdr.DeviceProperties,
+      itdr.LogonError
+  | LIMIT
+      10
