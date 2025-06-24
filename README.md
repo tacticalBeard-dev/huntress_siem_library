@@ -31,7 +31,7 @@ title:
 id: 
 status: 
 description: >
-author: tacticalbeard-dev
+author: 
 date: 
 modified: 
 references:
