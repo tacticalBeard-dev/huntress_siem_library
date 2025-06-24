@@ -1,0 +1,34 @@
+title: ENTRA MFA Enabled
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to ITDR and the operation is Enable Strong Authentication.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2025/06/24
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+tags:
+  - cybersecurity
+  - microsoft.entra.id
+  - azure.active.directory
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: ITDR
+analyst_notes: >
+  This will identify when strong authentication has been enabled.
+  Even though this would be considered a desirable action, if it occurs outside of traditional onboarding periods or activation campaigns it could highlight a process issue.
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation=="Enable Strong Authentication."
+  | KEEP
+      itdr.Operation,
+      itdr.UserId,
+      itdr.UserType,
+      itdr.ObjectId
+  | LIMIT
+      10
