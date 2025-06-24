@@ -1,0 +1,31 @@
+title: All Logs by Hostname
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Meraki.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2025/06/24
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/41181137671827-API-Cisco-Meraki-Cloud"
+  - "https://support.huntress.io/hc/en-us/articles/38958950569107-Syslog-Cisco-Meraki-MX-Security-Appliance"
+tags:
+  - starter
+  - meraki
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: ITDR
+analyst_notes: >
+  This can be used as a starter query for finding the right properties when creating your own queries.
+  It can also be used to validate that syslogs are being ingested for the target hostname as expected.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Meraki"
+  | KEEP
+      host.hostname,
+      host.ip
+  | LIMIT
+      10
