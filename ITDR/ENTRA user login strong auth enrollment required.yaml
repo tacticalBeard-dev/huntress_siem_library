@@ -1,0 +1,49 @@
+title: ENTRA User Login Strong Auth Enrollment Required
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to ITDR and the logon error is interrupted due to one of the Strong Auth Requirements.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2025/06/24
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+  - "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"
+tags:
+  - cybersecurity
+  - microsoft.entra.id
+  - azure.active.directory
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: ITDR
+analyst_notes: >
+  One of the following conditions is true:
+  1. UserStrongAuthEnrollmentRequiredInterrupt - User needs to enroll for second factor authentication (interactive).
+  2. UserStrongAuthClientAuthNRequiredInterrupt - Strong authentication is required and the user did not pass the MFA challenge.
+  3. UserStrongAuthClientAuthNRequired - Due to a configuration change made by the admin such as a Conditional Access policy, per-user enforcement, or because you moved to a new location, the user must use multifactor authentication to access the resource. 
+  Retry with a new authorize request for the resource.
+  4. UserStrongAuthExpired- Presented multifactor authentication has expired due to policies configured by your administrator. 
+  You must refresh your multifactor authentication to access '{resource}'.
+  5. UserStrongAuthEnrollmentRequired - Due to a configuration change made by the admin such as a Conditional Access policy, per-user enforcement, or because the user moved to a new location, the user is required to use multifactor authentication. 
+  Either a managed user needs to register security info to complete multifactor authentication, or a federated user needs to get the multifactor claim from the federated identity provider.
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+  | WHERE
+      itdr.LogonError=="UserStrongAuthEnrollmentRequiredInterrupt"
+      OR itdr.LogonError=="UserStrongAuthClientAuthNRequiredInterrupt"
+      OR itdr.LogonError=="UserStrongAuthClientAuthNRequired"
+      OR itdr.LogonError=="UserStrongAuthExpired"
+      OR itdr.LogonError=="UserStrongAuthEnrollmentRequired"
+  | KEEP
+      itdr.Operation,
+      itdr.UserKey,
+      itdr.UserId,
+      itdr.ClientIP,
+      itdr.DeviceProperties,
+      itdr.LogonError
+  | LIMIT
+      10

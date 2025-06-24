@@ -12,7 +12,6 @@ tags:
   - cybersecurity
   - microsoft.entra.id
   - azure.active.directory
-  - ioc
 logsource:
   language: ESQL
   platform: Huntress SIEM
