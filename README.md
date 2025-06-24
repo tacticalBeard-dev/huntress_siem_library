@@ -26,7 +26,7 @@ Repository for sharing and source control for Huntress SIEM queries.
 *   Huntress SIEM
 
 ## YAML format
-
+```
 title: 
 id: 
 status: 
@@ -44,3 +44,4 @@ logsource:
   type: 
 analyst_notes: >
 query: >
+```
