@@ -12,7 +12,7 @@ references:
 tags:
   - cybersecurity
   - ioc
-  - ciscoduo
+  - cisco.duo
 logsource:
   language: ESQL
   platform: Huntress SIEM

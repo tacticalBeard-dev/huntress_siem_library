@@ -1,0 +1,35 @@
+title: ENTRA MFA disabled
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to ITDR and the operation is Disable Strong Authentication.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2025/06/24
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+tags:
+  - cybersecurity
+  - microsoft.entra.id
+  - azure.active.directory
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: ITDR
+analyst_notes: >
+  This will identify when strong authentication has been disabled for an account which is not typically desirable.
+  At the very least this can indicate a misconfiguration or violation of standard policy.
+  Combined with other actions this can be a strong indicator of unwanted access.
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation=="Disable Strong Authentication."
+  | KEEP
+      itdr.Operation,
+      itdr.UserId,
+      itdr.UserType,
+      itdr.ObjectId
+  | LIMIT
+      10

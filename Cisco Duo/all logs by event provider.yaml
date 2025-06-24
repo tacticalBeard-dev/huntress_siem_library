@@ -11,7 +11,7 @@ references:
   - "https://duo.com/docs/adminapi"
 tags:
   - starter
-  - ciscoduo
+  - cisco.duo
 logsource:
   language: ESQL
   platform: Huntress SIEM
