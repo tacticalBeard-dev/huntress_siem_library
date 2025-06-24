@@ -1,7 +1,9 @@
 # huntress_siem_library
+
 Repository for sharing and source control for Huntress SIEM queries.
 
 ## Project Description
+
 <p>Some of these queries are not directly related to security but may be useful for troubleshooting other issues.</p>
 
 <p>The formatting for these queries is designed to improve readability especially for longer queries and is not optimized for performance.</p>
@@ -24,6 +26,7 @@ Repository for sharing and source control for Huntress SIEM queries.
 *   Huntress SIEM
 
 ## YAML format
+
 title: 
 id: 
 status: 
