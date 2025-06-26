@@ -1,0 +1,43 @@
+title: SSLVPN Tunnel Info
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Fortigate and the event codes are informational SSLVPN tunnel events.
+author: tacticalbeard-dev
+date: 2025/06/26
+modified: 2025/06/26
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
+tags:
+  - cybersecurity
+  - fortigate
+  - sslvpn
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Fortigate
+analyst_notes: >
+  Event Code 39948 - SSL tunnel shutdown
+  Event Code 39947 - SSL tunnel established (tunnel established)
+  Event Code 39424 - SSL tunnel established (login successfuly)
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+      AND event.code==39424
+      OR event.code==39947
+      OR event.code==39948
+  | KEEP
+      host.hostname,
+      event.code,
+      event.name,
+      fortigate.FTNTFGTtunnelid,
+      fortigate.duser,
+      fortigate.dst,
+      fortigate.FTNTFGTtunnelip,
+      fortigate.FTNTFGTduration,
+      fortigate.out,
+      fortigate.in
+  | LIMIT
+      10

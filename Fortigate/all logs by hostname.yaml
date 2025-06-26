@@ -1,0 +1,33 @@
+title: Admin Logins
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Fortigate.
+author: tacticalbeard-dev
+date: 2025/06/26
+modified: 2025/06/26
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
+tags:
+  - starter
+  - fortigate
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Fortigate
+analyst_notes: >
+  This will give you a good starting point for finding the raw logs.
+  You can use this information to verify logs are being ingested and retained.
+  The raw logs will also assist with creating other queries.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+  | KEEP
+      host.hostname,
+      host.ip,
+      fortigate.src,
+      fortigate.dst
+  | LIMIT
+      10
