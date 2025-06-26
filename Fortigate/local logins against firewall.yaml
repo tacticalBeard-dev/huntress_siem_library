@@ -1,0 +1,44 @@
+title: Local Logins Against Firewall
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Fortigate and the event codes are failed, successful, or lockout.
+author: tacticalbeard-dev
+date: 2025/06/26
+modified: 2025/06/26
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
+tags:
+  - cybersecurity
+  - fortigate
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Fortigate
+analyst_notes: >
+  These event codes show any local login attempts against the firewall.
+  Event code 43008 - Authentication Success
+  Event code 43009 - Authentication Failure
+  Event code 43010 - Authentication Lockout
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+  | WHERE
+      event.code==43008
+      OR event.code==43009
+      OR event.code==43010
+  | KEEP
+      fortigate.duser,
+      fortigate.FTNTFGTprofile,
+      fortigate.src,
+      fortigate.dst,
+      fortigate.FTNTFGTmethod,
+      fortigate.FTNTFGTauthproto,
+      event.code,
+      fortigate.outcome,
+      fortigate.reason
+  | LIMIT
+      10
