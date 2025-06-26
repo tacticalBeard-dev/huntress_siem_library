@@ -1,10 +1,10 @@
-title: All Logs by Hostname
+title: All Security Alerts
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Syslog-Meraki.
+  Find all logs where the event provider is equal to Syslog-Meraki and the event type is related to security.
 author: tacticalbeard-dev
-date: 2025/06/24
+date: 2025/06/26
 modified: 2025/06/26
 references:
   - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
@@ -13,21 +13,20 @@ references:
   - "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/Syslog_Event_Types_and_Log_Samples"
 tags:
   - starter
+  - cybersecurity
   - meraki
+  - ioc
 logsource:
   language: ESQL
   platform: Huntress SIEM
   type: Syslog-Meraki
 analyst_notes: >
-  This will give you a good starting point for finding the raw logs.
-  You can use this information to verify logs are being ingested and retained.
-  The raw logs will also assist with creating other queries.
+  This can be used as a starter query for finding the right properties when creating your own queries.
+  All generic security events are filtered by this query and you can use the meraki.event_description to filter further.
 query: >
   from logs
-  | WHERE
-      event.provider=="Syslog-Meraki"
-  | KEEP
-      host.hostname,
-      host.ip
-  | LIMIT
-      10
+    | WHERE
+        event.provider=="Syslog-Meraki"
+        AND meraki.event_type=="security_event"
+    | LIMIT
+        10
