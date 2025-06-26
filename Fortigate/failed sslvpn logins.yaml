@@ -20,7 +20,7 @@ logsource:
   type: Syslog-Fortigate
 analyst_notes: >
   Failed SSLVPN logins could be an indication of targeted or random bruteforce attempts.
-  It is also an indication of a potentially exposed SSLVPN attack vector.
+  It is also an indication of a potentially exposed SSLVPN attack vector when source is not trusted location.
 query: >
   from logs
   | WHERE

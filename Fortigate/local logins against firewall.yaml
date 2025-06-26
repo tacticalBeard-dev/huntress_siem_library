@@ -19,9 +19,9 @@ logsource:
   type: Syslog-Fortigate
 analyst_notes: >
   These event codes show any local login attempts against the firewall.
-  Event code 43008 is Authentication Success
-  Event code 43009 is Authentication Failure
-  Event code 43010 is Authentication Lockout
+  Event code 43008 - Authentication Success
+  Event code 43009 - Authentication Failure
+  Event code 43010 - Authentication Lockout
 query: >
   from logs
   | WHERE
