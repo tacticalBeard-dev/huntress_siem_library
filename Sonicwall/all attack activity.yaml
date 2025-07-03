@@ -1,0 +1,71 @@
+title: All Attack Activity
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Sonicwall and the event codes match an attack activity.
+author: tacticalbeard-dev
+date: 2025/07/02
+modified: 2025/07/02
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35348612546067-Starter-Queries-Sonicwall-Firewall"
+  - "https://www.sonicwall.com/techdocs/pdf/sonicos-6-5-1-log-events-reference-guide.pdf"
+  - "https://www.sonicwall.com/support/technical-documentation/docs/nsm-system_events/Content/nsm-system-events.htm"
+tags:
+  - cybersecurity
+  - sonicwall
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Sonicwall
+analyst_notes: >
+  22 = Ping of Death Blocked (Ping of death dropped)
+  23 = IP Spoof Detected (IP spoof dropped)
+  27 = Land Attack (Land attack dropped)
+  81 = Smurf Attack (Smurf Amplification attack dropped)
+  82 = Port Scan Possible (Possible port scan detected)
+  83 = Port Scan Probable (Probable port scan detected)
+  177 = TCP FIN Scan (Probable TCP FIN scan detected)
+  178 = TCP Xmas Scan (Probable TCP XMAS scan detected)
+  179 = TCP Null Scan (Probable TCP NULL scan detected)
+  267 = TCP Xmas Tree Attack (TCP Xmas Tree dropped)
+  606 = Spank Attack (Spank attack multicast packet dropped)
+  1373 = IPv6 fragment size is less than minimum <1280 (IPv6 fragment dropped, invalid length <1280 Bytes)
+  1374 = IP Reassembly : Incomplete IGMP fragment (IGMP packet dropped, incomplete fragments)
+  1375 = UDP fragmented datagram is too big >65535 (UDP fragment dropped, exceeds maximum IP datagram size >65535)
+  1376 = Nestea/Teardrop Attack (Nestea/Teardrop attack dropped)
+  1387 = TCP Null Flag Attack (TCP Null Flag dropped)
+  1471 = External IDS (External IDS:%s)
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SonicWall"
+  | WHERE
+      event.code==22
+      OR event.code==23
+      OR event.code==27
+      OR event.code==81
+      OR event.code==82
+      OR event.code==83
+      OR event.code==177
+      OR event.code==178
+      OR event.code==179
+      OR event.code==181
+      OR event.code==267
+      OR event.code==606
+      OR event.code==1373
+      OR event.code==1374
+      OR event.code==1375
+      OR event.code==1376
+      OR event.code==1387
+      OR event.code==1471
+  | KEEP
+      host.ip,
+      sonicwall.sn,
+      event.code,
+      source.ip,
+      sonicwall.msg,
+      sonicwall.note
+  | LIMIT
+      10

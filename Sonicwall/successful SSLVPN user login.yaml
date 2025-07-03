@@ -1,0 +1,41 @@
+title: Successful SSLVPN User Login
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Sonicwall and the event codes equals 1080 Successful SSL VPN User Login.
+author: tacticalbeard-dev
+date: 2025/07/02
+modified: 2025/07/02
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35348612546067-Starter-Queries-Sonicwall-Firewall"
+  - "https://www.sonicwall.com/techdocs/pdf/sonicos-6-5-1-log-events-reference-guide.pdf"
+  - "https://www.sonicwall.com/support/technical-documentation/docs/nsm-system_events/Content/nsm-system-events.htm"
+tags:
+  - cybersecurity
+  - sonicwall
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Sonicwall
+analyst_notes: >
+  1080 = Successful SSL VPN User Login (Authentication Access)
+  Failed VPN logins could be an indication of targeted or random bruteforce attempts.
+  It is also an indication of a potentially exposed VPN attack vector when source is not trusted location.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SonicWall"
+  | WHERE
+      event.code==1080
+  | KEEP
+      host.ip,
+      sonicwall.sn,
+      event.code,
+      source.ip,
+      sonicwall.usr,
+      sonicwall.sess,
+      message
+  | LIMIT
+      10
