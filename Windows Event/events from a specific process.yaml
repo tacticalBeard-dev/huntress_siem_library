@@ -1,0 +1,29 @@
+title: Events from a Specific Process
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the process name matches a path.
+author: tacticalbeard-dev
+date: 2025/07/14
+modified: 2025/07/14
+references:
+  - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  Example path for Microsoft Edge provided in query.
+query: >
+  from logs
+  | WHERE 
+      event.provider=="Microsoft-Windows-Security-Auditing" 
+  | WHERE 
+      winlog.event_data.ProcessName == "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+  | LIMIT 
+      10

@@ -1,0 +1,38 @@
+title: DNS Client Event Provider
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-DNS-Client.
+author: tacticalbeard-dev
+date: 2025/07/14
+modified: 2025/07/14
+references:
+  - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+tags:
+  - starter
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  These logs include client side operations and resolution activities for DNS.
+  Event ID 1014 - Name resolution for the name [hostname] timed out after none of the configured DNS servers responded.
+  Event ID 8015 - The system failed to register host (A or AAAA) resource records (RRs) for a network adapter.
+  Event ID 8017 - The system failed to update and remove host (A or AAAA) resource records (RRs) for network adapter.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-DNS-Client"
+  | KEEP
+      event.code,
+      host.hostname,
+      winlog.event_data.Address,
+      winlog.event_data.AddressLength,
+      winlog.event_data.QueryName,
+      winlog.event_data.DnsServerList,
+      winlog.event_data.Ipaddress,
+      winlog.event_data.ErrorCode
+  | LIMIT
+      10
