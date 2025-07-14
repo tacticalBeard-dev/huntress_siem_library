@@ -1,0 +1,49 @@
+title: Account Management Events
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the event code is equal to 4720, 4722, 4725, 4726, 4741, or 4743.
+author: tacticalbeard-dev
+date: 2025/07/14
+modified: 2025/07/14
+references:
+  - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  These logs are all related to User and Group Account Management.
+  Event ID 4720 - A user account was created.
+  Event ID 4722 - A user account was enabled.
+  Event ID 4725 - A user account was disabled.
+  Event ID 4726 - A user account was deleted.
+  Event ID 4741 - A computer account was created.
+  Event ID 4743 - A computer account was deleted.
+query: >
+  from logs
+  | WHERE 
+      event.provider=="Microsoft-Windows-Security-Auditing" 
+  | WHERE 
+      event.code=="4720" 
+      OR event.code=="4722" 
+      OR event.code=="4725" 
+      OR event.code=="4726" 
+      OR event.code=="4741" 
+      OR  event.code=="4743" 
+  | KEEP 
+      host.hostname, 
+      event.code, 
+      winlog.event_data.SubjectDomainName, 
+      winlog.event_data.SubjectUserName, 
+      winlog.event_data.SubjectLogonId, 
+      winlog.event_data.TargetDomainName, 
+      winlog.event_data.TargetUserName, 
+      winlog.event_data.DisplayName
+  | LIMIT 
+      10
