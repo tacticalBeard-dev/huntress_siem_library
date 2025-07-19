@@ -1,0 +1,36 @@
+title: Key Storage Provider
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the provider name is equal to Microsoft Software Key Storage Provider.
+author: tacticalbeard-dev
+date: 2025/07/14
+modified: 2025/07/14
+references:
+  - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  These logs will show key file and cryptographic operations.
+query: >
+  from logs
+  | WHERE 
+      event.provider=="Microsoft-Windows-Security-Auditing" 
+  | WHERE 
+      winlog.event_data.ProviderName=="Microsoft Software Key Storage Provider"
+  | KEEP
+      event.code,
+      host.hostname,
+      user.name,
+      winlog.event_data.KeyType,
+      winlog.event_data.Operation,
+      message
+  | LIMIT 
+      10

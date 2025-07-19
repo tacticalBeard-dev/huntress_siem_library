@@ -1,0 +1,38 @@
+title: HttpService Event Provider
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-HttpService.
+author: tacticalbeard-dev
+date: 2025/07/14
+modified: 2025/07/14
+references:
+  - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+tags:
+  - starter
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  These logs primarily concerned with the HTTP.sys kernel-mode driver. 
+  This driver is a core component of Windows that handles HTTP requests and responses at a very low level.
+  Event ID 111 - HTTP Configuration Property Trace Task - Add URL Group.
+  Event ID 112 - HTTP Configuration Property Trace Task - Add Request Queue.
+  Event ID 113 - HTTP Configuration Property Trace Task - Set Property.
+  Event ID 114 - HTTP Configuration Property Trace Task - Delete URL Group.
+  Event ID 117 - HTTP Configuration Property Trace Task - Delete URL group.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-HttpService"
+  | KEEP
+      event.code,
+      host.hostname,
+      winlog.event_data.ProcessId,
+      winlog.event_data.Url,
+      winlog.event_data.UserSid
+  | LIMIT
+      10
