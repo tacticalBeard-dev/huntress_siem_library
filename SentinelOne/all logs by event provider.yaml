@@ -1,0 +1,27 @@
+title: All Logs by Event Provider
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-SentinelOne.
+author: tacticalbeard-dev
+date: 2025/09/28
+modified: 2025/09/28
+references:
+  - "https://support.huntress.io/hc/en-us/articles/41838176250259-API-SentinelOne-Audit-Logs"
+tags:
+  - starter
+  - sentinelone
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: SentinelOne
+analyst_notes: >
+  This will give you a good starting point for finding the raw logs.
+  You can use this information to verify logs are being ingested and retained.
+  The raw logs will also assist with creating other queries.
+query: >
+  from logs 
+  | WHERE
+    event.provider=="Syslog-SentinelOne"
+  | LIMIT
+    10
