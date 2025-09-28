@@ -5,7 +5,7 @@ description: >
   Find all logs where the event provider is equal to ITDR and message contains a specific user id and message string.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2025/06/24
+modified: 2025/08/18
 references:
   - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
   - "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"
@@ -21,7 +21,17 @@ logsource:
 analyst_notes: >
   This can be used as a starter query for finding the right properties when creating your own queries.
   Make sure to change the UserID and message string in the query.
-  EXAMPLE MESSAGES: GATFRTokenIssue, UniqueTokenIdentifier, MailItemsAccessed, ExternalAccess, \\Calendar
+  EXAMPLE MESSAGES: 
+    GATFRTokenIssue, 
+    UniqueTokenIdentifier, 
+    MailItemsAccessed, 
+    AttachmentAccess, 
+    MoveToDeletedItems, 
+    SoftDelete, 
+    HardDelete, 
+    ExternalAccess, 
+    Set-MailboxCalendarConfiguration, 
+    \\Calendar
 query: >
   from logs
   | WHERE

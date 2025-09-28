@@ -1,0 +1,44 @@
+title: Sonicwall VPN IOC ransomware executables
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and process name IOC reported by Huntress blog.
+author: tacticalbeard-dev
+date: 2025/08/18
+modified: 2025/08/18
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+  - "https://www.huntress.com/blog/exploitation-of-sonicwall-vpn"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  Ransomware executables and data staging tools posted on Huntress blog as IOCs.
+query: >
+  from logs
+  | WHERE 
+      event.provider=="Microsoft-Windows-Security-Auditing" 
+  | WHERE 
+      winlog.event_data.ProcessName == "win.exe"
+      or
+      winlog.event_data.ProcessName == "C:\ProgramData\winrar.exe"
+      or
+      winlog.event_data.ProcessName == "C:\ProgramData\OpenSSHa.msi"
+      or
+      winlog.event_data.ProcessName == "C:\Program Files\OpenSSH\sshd.exe"
+      or
+      winlog.event_data.ProcessName == "C:\programdata\ssh\cloudflared.exe"
+      or
+      winlog.event_data.ProcessName == "C:\Program Files\FileZilla FTP Client\fzsftp.exe"
+      or
+      winlog.event_data.ProcessName == "C:\ProgramData\1.bat"
+      or
+      winlog.event_data.ProcessName == "C:\ProgramData\2.bat"
+  | LIMIT 
+      10

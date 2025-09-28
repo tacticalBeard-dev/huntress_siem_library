@@ -1,0 +1,54 @@
+title: Sonicwall VPN IOC login by IP
+id: null
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Sonicwall and source ip equals IOC reported by Huntress blog.
+author: tacticalbeard-dev
+date: 2025/08/18
+modified: 2025/08/18
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35348612546067-Starter-Queries-Sonicwall-Firewall"
+  - "https://www.sonicwall.com/techdocs/pdf/sonicos-6-5-1-log-events-reference-guide.pdf"
+  - "https://www.sonicwall.com/support/technical-documentation/docs/nsm-system_events/Content/nsm-system-events.htm"
+  - "https://www.huntress.com/blog/exploitation-of-sonicwall-vpn"
+tags:
+  - cybersecurity
+  - sonicwall
+  - ioc
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Sonicwall
+analyst_notes: >
+  Attacker IPs posted on Huntress blog as IOCs.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SonicWall"
+  | WHERE
+      source.ip=="42.252.99.59"
+      or
+      source.ip=="45.86.208.240"
+      or
+      source.ip=="77.247.126.239"
+      or
+      source.ip=="104.238.205.105"
+      or
+      source.ip=="104.238.220.216"
+      or
+      source.ip=="181.215.182.64"
+      or
+      source.ip=="193.239.236.149"
+      or
+      source.ip=="194.33.45.155"
+  | KEEP
+      host.ip,
+      sonicwall.sn,
+      event.code,
+      source.ip,
+      sonicwall.usr,
+      sonicwall.sess,
+      message
+  | LIMIT
+      10
