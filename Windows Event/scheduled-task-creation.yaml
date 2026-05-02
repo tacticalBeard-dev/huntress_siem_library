@@ -15,11 +15,11 @@ references:
   - "https://attack.mitre.org/techniques/T1053/005/"
   - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4698"
 tags:
-  - cybersecurity
+  - attack.t1053.005
+  - attack.persistence
+  - attack.execution
+  - attack.privilege_escalation
   - windows.event
-  - ioc
-  - persistence
-  - scheduled.task
 logsource:
   language: ESQL
   platform: Huntress SIEM

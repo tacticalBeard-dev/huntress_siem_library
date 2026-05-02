@@ -5,15 +5,15 @@ description: >
   Find all logs where a specific registry key has been modified. This query targets keys under the 'Run' registry path, which are often used for persistence.
 author: tacticalbeard-dev
 date: 2025/09/22
-modified: 2025/09/22
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
   - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
 tags:
-  - cybersecurity
+  - attack.t1547.001
+  - attack.persistence
+  - attack.privilege_escalation
   - windows.event
-  - ioc
-  - persistence
 logsource:
   language: ESQL
   platform: Huntress SIEM
@@ -24,7 +24,7 @@ query: >
   from logs
   | where event.provider == "Microsoft-Windows-Security-Auditing"
   | where event.code == 4657
-  | where winlog.event_data.ObjectName LIKE "%REGISTRY\MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run%"
+  | where winlog.event_data.ObjectName LIKE "%REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run%"
   | keep
     winlog.event_data.SubjectUserName,
     winlog.event_data.ObjectName,

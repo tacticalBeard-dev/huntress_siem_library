@@ -5,12 +5,11 @@ description: >
   Find all logs where the event provider is equal to Microsoft-Windows-DNS-Client.
 author: tacticalbeard-dev
 date: 2025/07/14
-modified: 2025/07/14
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
   - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
 tags:
-  - starter
   - windows.event
 logsource:
   language: ESQL

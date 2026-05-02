@@ -5,14 +5,15 @@ description: >
   Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the event code is equal to 5136.
 author: tacticalbeard-dev
 date: 2025/08/18
-modified: 2025/08/18
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
   - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
 tags:
-  - cybersecurity
+  - attack.t1484.001
+  - attack.defense_evasion
+  - attack.privilege_escalation
   - windows.event
-  - ioc
 logsource:
   language: ESQL
   platform: Huntress SIEM
@@ -34,7 +35,3 @@ query: >
       winlog.event_data.OperationType 
   | LIMIT
       10
-
-
-
-

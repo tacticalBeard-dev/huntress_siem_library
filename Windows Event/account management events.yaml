@@ -5,14 +5,17 @@ description: >
   Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the event code is equal to 4720, 4722, 4725, 4726, 4741, or 4743.
 author: tacticalbeard-dev
 date: 2025/07/14
-modified: 2025/07/14
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
   - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
 tags:
-  - cybersecurity
+  - attack.t1098
+  - attack.t1136
+  - attack.t1531
+  - attack.persistence
+  - attack.impact
   - windows.event
-  - ioc
 logsource:
   language: ESQL
   platform: Huntress SIEM

@@ -15,11 +15,9 @@ references:
   - "https://attack.mitre.org/techniques/T1136/001/"
   - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4720"
 tags:
-  - cybersecurity
+  - attack.t1136.001
+  - attack.persistence
   - windows.event
-  - ioc
-  - persistence
-  - account.creation
 logsource:
   language: ESQL
   platform: Huntress SIEM

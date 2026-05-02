@@ -15,12 +15,10 @@ references:
   - "https://attack.mitre.org/techniques/T1550/002/"
   - "https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/event.aspx?eventID=4624"
 tags:
-  - cybersecurity
+  - attack.t1550.002
+  - attack.lateral_movement
+  - attack.defense_evasion
   - windows.event
-  - ioc
-  - lateral.movement
-  - ntlm
-  - active.directory
 logsource:
   language: ESQL
   platform: Huntress SIEM

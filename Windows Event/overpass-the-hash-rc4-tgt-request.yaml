@@ -16,12 +16,10 @@ references:
   - "https://learn.microsoft.com/en-us/windows-server/security/kerberos/detect-remediate-rc4-kerberos"
   - "https://www.splunk.com/en_us/blog/security/detecting-active-directory-kerberos-attacks-threat-research-release-march-2022.html"
 tags:
-  - cybersecurity
+  - attack.t1550.002
+  - attack.lateral_movement
+  - attack.defense_evasion
   - windows.event
-  - ioc
-  - active.directory
-  - kerberos
-  - lateral.movement
 logsource:
   language: ESQL
   platform: Huntress SIEM

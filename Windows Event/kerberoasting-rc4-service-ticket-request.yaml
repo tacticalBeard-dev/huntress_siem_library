@@ -16,12 +16,9 @@ references:
   - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769"
   - "https://www.nccgroup.com/research/defending-your-directory-an-expert-guide-to-combating-kerberoasting-in-active-directory/"
 tags:
-  - cybersecurity
+  - attack.t1558.003
+  - attack.credential_access
   - windows.event
-  - ioc
-  - kerberoasting
-  - active.directory
-  - credential.access
 logsource:
   language: ESQL
   platform: Huntress SIEM
