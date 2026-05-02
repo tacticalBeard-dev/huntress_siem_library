@@ -1,0 +1,47 @@
+title: New Local User Account Created
+id: null
+status: Production
+description: >
+  Detects creation of a new local user account via Event 4720. While domain accounts are
+  the norm in managed environments, attackers frequently create local accounts as a
+  persistence mechanism to maintain access even if domain credentials are reset. A new
+  local account created by a non-IT process or outside of a known provisioning window —
+  especially followed by Event 4732 (addition to local Administrators group) — is a
+  significant indicator of compromise.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1136/001/"
+  - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4720"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+  - persistence
+  - account.creation
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  Pair with Event 4732 (added to local Administrators group) to detect the full attacker
+  workflow — create account then elevate it. SubjectUserName is the account that performed
+  the action. SYSTEM-initiated account creation by a non-administrative process is especially
+  suspicious. Filter known deployment or imaging tools that create accounts as part of build
+  processes to reduce noise. Note that the broader account management events query also
+  captures 4720 alongside other account lifecycle events.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+      AND event.code=="4720"
+  | KEEP
+      host.hostname,
+      winlog.event_data.SubjectUserName,
+      winlog.event_data.SubjectDomainName,
+      winlog.event_data.TargetUserName,
+      winlog.event_data.SamAccountName,
+      winlog.event_data.DisplayName
+  | LIMIT
+      10

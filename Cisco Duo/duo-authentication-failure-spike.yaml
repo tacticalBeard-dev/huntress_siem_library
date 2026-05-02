@@ -1,0 +1,46 @@
+title: Duo Authentication Failure Spike — Single User
+id: null
+status: Production
+description: >
+  Detects a high volume of Duo authentication failures for a single user which may
+  indicate a brute-force or credential stuffing attack where the attacker has valid
+  credentials and is attempting to satisfy MFA through repeated attempts. Also captures
+  bypass results which indicate Duo was circumvented — this should be rare and always
+  reviewed regardless of count.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1110/"
+  - "https://duo.com/docs/adminapi#authentication-logs"
+tags:
+  - cybersecurity
+  - ioc
+  - cisco.duo
+  - brute.force
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Cisco Duo
+analyst_notes: >
+  The bypass result means Duo was configured to allow access without a second factor for
+  this user or application and warrants immediate review regardless of count. For failure
+  spikes cross-reference the source IP against threat intelligence. Failures from multiple
+  geographic locations for the same user simultaneously indicate credential stuffing from
+  a botnet rather than a single attacker.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Duo"
+  | WHERE
+      duo.result=="denied"
+      OR duo.result=="fraud"
+      OR duo.result=="bypass"
+  | STATS
+      failure_count = COUNT(),
+      unique_ips = COUNT_DISTINCT(duo.access_device.ip)
+      BY duo.email, duo.application.name
+  | WHERE
+      failure_count >= 5
+  | LIMIT
+      10

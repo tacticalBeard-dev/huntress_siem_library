@@ -1,0 +1,55 @@
+title: MFA Push Fatigue — Repeated Denials Followed by Approval
+id: null
+status: Production
+description: >
+  Detects potential MFA push fatigue attacks by identifying Duo Push authentication
+  events where the result is denied or reported as fraud. In push fatigue attacks an
+  attacker with valid credentials repeatedly sends MFA push notifications hoping the user
+  will accidentally approve one to stop the interruptions. A pattern of multiple denials
+  followed by an approval for the same user is the primary detection signal. Duo fraud
+  results indicate a user-reported suspicious push.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1621/"
+  - "https://duo.com/blog/mfa-fatigue-attacks"
+tags:
+  - cybersecurity
+  - ioc
+  - cisco.duo
+  - mfa.fatigue
+  - push.notification
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Cisco Duo
+analyst_notes: >
+  The result field uses denied for user-rejected pushes and fraud when the user reports
+  the request as suspicious via the Duo app. An allow result following multiple denied
+  results for the same user and application is the pattern to investigate. Check whether
+  the approving authentication came from a different IP or device than the denials as a
+  location change between denial and approval is strong additional evidence of account
+  compromise.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Duo"
+  | WHERE
+      duo.result=="denied"
+      OR duo.result=="fraud"
+      OR duo.result=="allow"
+  | WHERE
+      duo.factor LIKE "%Push%"
+  | KEEP
+      duo.email,
+      duo.result,
+      duo.reason,
+      duo.factor,
+      duo.application.name,
+      duo.access_device.ip,
+      duo.access_device.location.city,
+      duo.access_device.location.state,
+      duo.access_device.location.country
+  | LIMIT
+      10

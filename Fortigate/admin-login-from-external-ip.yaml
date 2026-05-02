@@ -1,0 +1,59 @@
+title: FortiGate Admin Login from External IP
+id: null
+status: Production
+description: >
+  Detects successful FortiGate administrative logins (Event code 32001) originating from
+  public IP addresses. FortiGate management interfaces should not be exposed to the
+  internet and any successful admin authentication from an external IP is a critical
+  finding. This pattern was observed in the exploitation of CVE-2022-40684 and is a
+  consistent indicator of unauthorized administrative access regardless of whether a CVE
+  was involved.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1078/"
+  - "https://www.cisa.gov/news-events/cybersecurity-advisories/aa22-377a"
+  - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
+tags:
+  - cybersecurity
+  - fortigate
+  - ioc
+  - admin.access
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Fortigate
+analyst_notes: >
+  Event code 32001 is Admin Logon Success. RFC 1918 private ranges (10.0.0.0/8,
+  172.16.0.0/12, 192.168.0.0/16) should be the only source IPs for admin logins. Any
+  login from a public IP should be treated as a critical alert. Refine the source IP
+  exclusions to match your actual management subnets for accuracy. Check the FortiGate
+  config change log immediately following any flagged login to determine what was accessed
+  or modified.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+      AND event.code==32001
+  | WHERE
+      fortigate.src NOT LIKE "10.%"
+      AND fortigate.src NOT LIKE "192.168.%"
+      AND fortigate.src NOT LIKE "172.16.%"
+      AND fortigate.src NOT LIKE "172.17.%"
+      AND fortigate.src NOT LIKE "172.18.%"
+      AND fortigate.src NOT LIKE "172.19.%"
+      AND fortigate.src NOT LIKE "172.2%.%"
+      AND fortigate.src NOT LIKE "172.30.%"
+      AND fortigate.src NOT LIKE "172.31.%"
+      AND fortigate.src NOT LIKE "127.%"
+  | KEEP
+      host.hostname,
+      fortigate.src,
+      fortigate.duser,
+      fortigate.FTNTFGTprofile,
+      fortigate.FTNTFGTmethod,
+      fortigate.outcome,
+      event.code
+  | LIMIT
+      10

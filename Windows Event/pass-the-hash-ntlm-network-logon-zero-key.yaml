@@ -1,0 +1,53 @@
+title: Pass-the-Hash — NTLM Network Logon with Zero Key Length
+id: null
+status: Production
+description: >
+  Detects potential Pass-the-Hash attacks using Event 4624 (Successful Logon). The
+  combination of Logon Type 3 (Network), NTLM authentication package, and Key Length 0
+  is the characteristic fingerprint left by tools like Mimikatz when performing
+  hash-based lateral movement. A legitimate NTLM network logon typically produces a
+  128-bit session key — a key length of 0 indicates the session key was not negotiated
+  which is abnormal and strongly associated with hash-passing tools.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1550/002/"
+  - "https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/event.aspx?eventID=4624"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+  - lateral.movement
+  - ntlm
+  - active.directory
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  Exclude computer accounts ($ suffix) and ANONYMOUS LOGON accounts to reduce noise.
+  Some legitimate services authenticate with NTLM Type 3 and zero key length so build
+  a baseline of known-good sources before treating every result as malicious. Cross-reference
+  the source IP with other lateral movement indicators such as concurrent service installation
+  (Event 7045) or process creation events on the target host shortly after the logon.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+      AND event.code=="4624"
+  | WHERE
+      winlog.event_data.LogonType=="3"
+      AND winlog.event_data.AuthenticationPackageName=="NTLM"
+      AND winlog.event_data.KeyLength=="0"
+  | KEEP
+      host.hostname,
+      winlog.event_data.TargetUserName,
+      winlog.event_data.TargetDomainName,
+      winlog.event_data.IpAddress,
+      winlog.event_data.LogonType,
+      winlog.event_data.AuthenticationPackageName,
+      winlog.event_data.KeyLength,
+      winlog.event_data.WorkstationName
+  | LIMIT
+      10

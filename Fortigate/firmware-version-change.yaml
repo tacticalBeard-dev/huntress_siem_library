@@ -1,0 +1,52 @@
+title: FortiGate Firmware Version Change
+id: null
+status: Production
+description: >
+  Detects FortiGate firmware upgrade or downgrade events logged in the system event log.
+  Unauthorized firmware downgrades are a documented attack pattern — an attacker or
+  misconfigured change management process may revert a device to a version with known
+  exploitable CVEs. Firmware changes should always be correlated with a change management
+  record. Downgrades in particular should be treated as a critical event requiring
+  immediate CVE assessment.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1601/"
+  - "https://www.fortiguard.com/psirt"
+  - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
+tags:
+  - cybersecurity
+  - fortigate
+  - ioc
+  - firmware
+  - change.management
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Fortigate
+analyst_notes: >
+  Firmware change events are typically captured in the event name or reason field and
+  contain terms like firmware, upgraded, or downgraded along with version strings. Any
+  downgrade should immediately trigger a CVE review against the version the device was
+  reverted to — check the Fortinet PSIRT advisory page for the specific version.
+  Cross-reference with your change management system to determine whether the change
+  was authorized.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+  | WHERE
+      event.name LIKE "%firmware%"
+      OR event.name LIKE "%upgraded%"
+      OR event.name LIKE "%downgraded%"
+      OR fortigate.reason LIKE "%firmware%"
+  | KEEP
+      host.hostname,
+      event.code,
+      event.name,
+      fortigate.duser,
+      fortigate.reason,
+      fortigate.outcome
+  | LIMIT
+      10

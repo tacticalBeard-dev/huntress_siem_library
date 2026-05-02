@@ -1,0 +1,52 @@
+title: OverPass-the-Hash — RC4 TGT Request
+id: null
+status: Production
+description: >
+  Detects potential OverPass-the-Hash by identifying Kerberos TGT requests (Event 4768)
+  using RC4-HMAC encryption (type 0x17). In this attack an adversary who has obtained an
+  NTLM hash uses it to request a Kerberos TGT without knowing the plaintext password.
+  Modern systems negotiate AES by default so an RC4 TGT request from a modern system is
+  unusual and warrants investigation, particularly when the requesting IP is a workstation
+  rather than a domain controller.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1550/002/"
+  - "https://learn.microsoft.com/en-us/windows-server/security/kerberos/detect-remediate-rc4-kerberos"
+  - "https://www.splunk.com/en_us/blog/security/detecting-active-directory-kerberos-attacks-threat-research-release-march-2022.html"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+  - active.directory
+  - kerberos
+  - lateral.movement
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  This fires on Domain Controllers only as Event 4768 is only logged on DCs. Status 0x0
+  means the TGT was successfully issued. Combine with 4624 Logon Type 9 (NewCredentials)
+  from the same source IP to confirm the attack chain. Requires Kerberos Authentication
+  Service auditing. Some legacy applications legitimately use RC4 so build a baseline of
+  known RC4 sources before alerting.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+      AND event.code=="4768"
+  | WHERE
+      winlog.event_data.TicketEncryptionType=="0x17"
+      AND winlog.event_data.Status=="0x0"
+  | KEEP
+      host.hostname,
+      winlog.event_data.TargetUserName,
+      winlog.event_data.TargetDomainName,
+      winlog.event_data.IpAddress,
+      winlog.event_data.TicketEncryptionType,
+      winlog.event_data.PreAuthType,
+      winlog.event_data.Status
+  | LIMIT
+      10

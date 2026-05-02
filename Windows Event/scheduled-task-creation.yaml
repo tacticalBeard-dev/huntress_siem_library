@@ -1,0 +1,45 @@
+title: Scheduled Task Created
+id: null
+status: Production
+description: >
+  Detects creation of a new Windows scheduled task via Event 4698. Scheduled tasks are a
+  common persistence mechanism used by attackers and malware. While legitimate software
+  frequently creates scheduled tasks during installation, attacker-created tasks often run
+  from unusual paths, use encoded PowerShell commands, or run under SYSTEM context initiated
+  by a non-admin user. The TaskContent field contains the full XML definition of the task
+  including the command, arguments, and trigger.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1053/005/"
+  - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4698"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+  - persistence
+  - scheduled.task
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  The TaskContent field contains the full XML of the task. Look for actions referencing
+  cmd.exe, powershell.exe, wscript.exe, or mshta.exe combined with encoded arguments
+  (-enc, -e, or base64 strings). Tasks created by SYSTEM or by accounts that are not
+  dedicated software deployment accounts warrant immediate review. Requires Audit Other
+  Object Access Events to be enabled in audit policy.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+      AND event.code=="4698"
+  | KEEP
+      host.hostname,
+      winlog.event_data.SubjectUserName,
+      winlog.event_data.SubjectDomainName,
+      winlog.event_data.TaskName,
+      winlog.event_data.TaskContent
+  | LIMIT
+      10

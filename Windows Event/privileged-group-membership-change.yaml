@@ -1,0 +1,52 @@
+title: Privileged Group Membership Change
+id: null
+status: Production
+description: >
+  Detects additions to Active Directory security groups using Events 4728 (global
+  security group), 4732 (local security group), and 4756 (universal security group).
+  Changes to groups like Domain Admins, Enterprise Admins, Schema Admins, Administrators,
+  or Remote Desktop Users are high-value events that should be reviewed regardless of who
+  made the change. Attackers frequently add accounts to privileged groups during the
+  privilege escalation phase to establish persistence.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1098/"
+  - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4728"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+  - active.directory
+  - group.modification
+  - persistence
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  All three event IDs cover different group scopes — use them together to avoid gaps.
+  TargetUserName is the GROUP that was modified. MemberName is the ACCOUNT that was added
+  and will appear in LDAP format such as CN=username,OU=Users,DC=domain,DC=com. Changes
+  made by automated provisioning systems at predictable times can be baselined and filtered.
+  Focus on changes outside business hours or by accounts that do not normally perform
+  provisioning tasks.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+  | WHERE
+      event.code=="4728"
+      OR event.code=="4732"
+      OR event.code=="4756"
+  | KEEP
+      host.hostname,
+      event.code,
+      winlog.event_data.SubjectUserName,
+      winlog.event_data.SubjectDomainName,
+      winlog.event_data.MemberName,
+      winlog.event_data.TargetUserName,
+      winlog.event_data.TargetDomainName
+  | LIMIT
+      10

@@ -1,0 +1,52 @@
+title: Kerberoasting — RC4 Service Ticket Request
+id: null
+status: Production
+description: >
+  Detects potential Kerberoasting activity by identifying Kerberos service ticket
+  requests (Event 4769) using RC4 encryption (type 0x17 or 0x18). Modern Windows
+  environments use AES encryption (0x12 or 0x11) by default. RC4 requests against
+  service accounts are a strong indicator of Kerberoasting attempts where an attacker
+  is requesting tickets to crack offline. Requires Kerberos Service Ticket Operations
+  auditing to be enabled.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1558/003/"
+  - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769"
+  - "https://www.nccgroup.com/research/defending-your-directory-an-expert-guide-to-combating-kerberoasting-in-active-directory/"
+tags:
+  - cybersecurity
+  - windows.event
+  - ioc
+  - kerberoasting
+  - active.directory
+  - credential.access
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Windows Event
+analyst_notes: >
+  Filter out computer accounts (ending in $) and the krbtgt service as these are normal.
+  Focus on service accounts where tickets are requested from a workstation IP rather than
+  from a DC. A spike of RC4 requests against multiple service accounts from a single
+  source IP in a short window is high confidence Kerberoasting. Verify audit policy is
+  enabled with: auditpol /get /subcategory:"Kerberos Service Ticket Operations"
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+      AND event.code=="4769"
+  | WHERE
+      winlog.event_data.TicketEncryptionType=="0x17"
+      OR winlog.event_data.TicketEncryptionType=="0x18"
+  | KEEP
+      host.hostname,
+      winlog.event_data.TargetUserName,
+      winlog.event_data.ServiceName,
+      winlog.event_data.IpAddress,
+      winlog.event_data.IpPort,
+      winlog.event_data.TicketEncryptionType,
+      winlog.event_data.Status
+  | LIMIT
+      10

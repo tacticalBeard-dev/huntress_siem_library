@@ -1,0 +1,47 @@
+title: FortiGate SSL-VPN Authentication Failure Spike
+id: null
+status: Production
+description: >
+  Detects a high volume of SSL-VPN authentication failures from a single source IP
+  against a FortiGate firewall. FortiGate SSL-VPN endpoints have been high-value targets
+  for credential stuffing and brute-force attacks. A burst of failures from a single IP
+  followed by a success is the pattern most consistent with a successful credential-based
+  compromise. Event codes 39426 and 37130 represent SSL-VPN authentication failures.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1110/"
+  - "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+  - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
+tags:
+  - cybersecurity
+  - fortigate
+  - ioc
+  - sslvpn
+  - brute.force
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: Syslog-Fortigate
+analyst_notes: >
+  Event code 39426 is SSL-VPN login failure and 37130 is a pre-authentication failure.
+  Failures followed by a successful tunnel event (39424 or 39947) from the same source
+  IP indicate a successful brute-force — prioritize those for immediate response. Cross-
+  reference high-failure source IPs against threat intelligence feeds and check for
+  corresponding successful SSL-VPN tunnel events using the sslvpn tunnel info query.
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+  | WHERE
+      event.code==39426
+      OR event.code==37130
+  | STATS
+      failure_count = COUNT(),
+      unique_users = COUNT_DISTINCT(fortigate.duser)
+      BY fortigate.src
+  | WHERE
+      failure_count >= 10
+  | LIMIT
+      10

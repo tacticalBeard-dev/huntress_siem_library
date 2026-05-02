@@ -1,0 +1,55 @@
+title: OAuth Device Code Flow Authentication
+id: null
+status: Production
+description: >
+  Detects Microsoft 365 / Entra ID authentications using the OAuth 2.0 Device
+  Authorization Grant (device code) flow. This flow is legitimate for input-constrained
+  devices but is actively abused in device code phishing attacks where victims are tricked
+  into entering an attacker-controlled code at microsoft.com/devicelogin. The attacker
+  receives a valid refresh token that persists through password resets. In most corporate
+  environments device code flow is rarely used legitimately and any occurrence should be
+  reviewed.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1528/"
+  - "https://www.proofpoint.com/us/blog/threat-insight/access-granted-phishing-device-code-authorization-account-takeover"
+  - "https://learn.microsoft.com/en-us/entra/identity/conditional-access/policy-block-device-code-flow"
+tags:
+  - cybersecurity
+  - microsoft.entra.id
+  - azure.active.directory
+  - ioc
+  - device.code.phishing
+  - oauth
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: ITDR
+analyst_notes: >
+  Investigation steps when this fires: Check the client IP against your known user
+  population — attacker infrastructure commonly uses residential proxy ranges. Look for a
+  non-interactive sign-in from a different IP for the same user within 5-10 minutes of
+  the device code event as that is the attacker using the token. Check for inbox rule
+  creation shortly after the sign-in. Containment: disable the account and revoke all
+  refresh tokens — password reset alone does not invalidate existing tokens. Validate
+  field names against your specific ITDR log format as device code authentication may
+  surface in itdr.Operation or itdr.LogonError depending on ingestion configuration.
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+  | WHERE
+      itdr.Operation LIKE "%DeviceCode%"
+      OR itdr.LogonError LIKE "%DeviceCode%"
+      OR itdr.Operation LIKE "%device_code%"
+  | KEEP
+      itdr.UserId,
+      itdr.UserKey,
+      itdr.ClientIP,
+      itdr.Operation,
+      itdr.LogonError,
+      itdr.DeviceProperties
+  | LIMIT
+      10

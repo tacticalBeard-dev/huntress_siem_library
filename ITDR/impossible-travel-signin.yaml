@@ -1,0 +1,45 @@
+title: Impossible Travel — Sign-In from Multiple Source IPs
+id: null
+status: Production
+description: >
+  Identifies Entra ID sign-in events where the same user authenticates from multiple
+  distinct source IPs within a short time window which may indicate account compromise
+  via credential theft or token reuse. This query surfaces users with sign-ins from
+  multiple IPs in a given period as a hunting starting point. Use it to prioritize
+  accounts for deeper investigation rather than as a standalone alert.
+author: tacticalbeard-dev
+date: 2026/05/02
+modified: 2026/05/02
+references:
+  - "https://attack.mitre.org/techniques/T1078/004/"
+  - "https://learn.microsoft.com/en-us/entra/id-protection/concept-identity-protection-risks"
+tags:
+  - cybersecurity
+  - microsoft.entra.id
+  - azure.active.directory
+  - ioc
+  - account.compromise
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  type: ITDR
+analyst_notes: >
+  Entra ID Protection natively detects impossible travel as a risk signal (risk event
+  type: impossibleTravel) and is a more reliable source for automated alerting. Use this
+  query for proactive hunting when reviewing sign-in patterns. Filter out known VPN exit
+  nodes and users who legitimately travel frequently. A high ip_count with a corresponding
+  high login_count from the same user is worth investigating — check itdr.ClientIP values
+  for geographic diversity and compare against the user's normal sign-in baseline.
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation=="UserLoggedIn"
+  | STATS
+      ip_count = COUNT_DISTINCT(itdr.ClientIP),
+      login_count = COUNT()
+      BY itdr.UserId
+  | WHERE
+      ip_count >= 2
+  | LIMIT
+      10
