@@ -5,11 +5,10 @@ description: >
   Find all logs where the event provider is equal to Syslog-SentinelOne.
 author: tacticalbeard-dev
 date: 2025/09/28
-modified: 2025/09/28
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/articles/41838176250259-API-SentinelOne-Audit-Logs"
 tags:
-  - starter
   - sentinelone
 logsource:
   language: ESQL
