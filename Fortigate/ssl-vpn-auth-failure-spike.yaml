@@ -15,11 +15,11 @@ references:
   - "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
   - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
 tags:
-  - cybersecurity
+  - attack.t1110
+  - attack.t1133
+  - attack.credential_access
+  - attack.initial_access
   - fortigate
-  - ioc
-  - sslvpn
-  - brute.force
 logsource:
   language: ESQL
   platform: Huntress SIEM

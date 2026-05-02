@@ -5,15 +5,12 @@ description: >
   Find all logs where the event provider is equal to ITDR and message contains a specific user id and message string.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2025/08/18
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
   - "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"
 tags:
-  - starter
-  - cybersecurity
   - microsoft.entra.id
-  - azure.active.directory
 logsource:
   language: ESQL
   platform: Huntress SIEM
@@ -31,7 +28,7 @@ analyst_notes: >
     HardDelete, 
     ExternalAccess, 
     Set-MailboxCalendarConfiguration, 
-    \\Calendar
+    \Calendar
 query: >
   from logs
   | WHERE

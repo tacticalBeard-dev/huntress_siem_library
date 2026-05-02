@@ -16,11 +16,9 @@ references:
   - "https://www.fortiguard.com/psirt"
   - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
 tags:
-  - cybersecurity
+  - attack.t1601
+  - attack.defense_evasion
   - fortigate
-  - ioc
-  - firmware
-  - change.management
 logsource:
   language: ESQL
   platform: Huntress SIEM

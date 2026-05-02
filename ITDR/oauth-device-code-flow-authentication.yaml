@@ -17,12 +17,9 @@ references:
   - "https://www.proofpoint.com/us/blog/threat-insight/access-granted-phishing-device-code-authorization-account-takeover"
   - "https://learn.microsoft.com/en-us/entra/identity/conditional-access/policy-block-device-code-flow"
 tags:
-  - cybersecurity
+  - attack.t1528
+  - attack.credential_access
   - microsoft.entra.id
-  - azure.active.directory
-  - ioc
-  - device.code.phishing
-  - oauth
 logsource:
   language: ESQL
   platform: Huntress SIEM

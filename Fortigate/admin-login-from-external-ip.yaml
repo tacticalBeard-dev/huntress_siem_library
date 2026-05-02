@@ -16,10 +16,10 @@ references:
   - "https://www.cisa.gov/news-events/cybersecurity-advisories/aa22-377a"
   - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
 tags:
-  - cybersecurity
+  - attack.t1078
+  - attack.t1133
+  - attack.initial_access
   - fortigate
-  - ioc
-  - admin.access
 logsource:
   language: ESQL
   platform: Huntress SIEM

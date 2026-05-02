@@ -5,12 +5,11 @@ description: >
   Find all logs where the event provider is equal to Duo.
 author: tacticalbeard-dev
 date: 2025/06/23
-modified: 2025/06/23
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/articles/36516946793107-API-Cisco-Duo"
   - "https://duo.com/docs/adminapi"
 tags:
-  - starter
   - cisco.duo
 logsource:
   language: ESQL

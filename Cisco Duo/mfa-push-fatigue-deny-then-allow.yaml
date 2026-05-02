@@ -15,11 +15,9 @@ references:
   - "https://attack.mitre.org/techniques/T1621/"
   - "https://duo.com/blog/mfa-fatigue-attacks"
 tags:
-  - cybersecurity
-  - ioc
+  - attack.t1621
+  - attack.credential_access
   - cisco.duo
-  - mfa.fatigue
-  - push.notification
 logsource:
   language: ESQL
   platform: Huntress SIEM

@@ -5,13 +5,14 @@ description: >
   Find all logs where the event provider is equal to Duo and the result type is SMS.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2025/06/24
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/articles/36516946793107-API-Cisco-Duo"
   - "https://duo.com/docs/adminapi"
 tags:
-  - cybersecurity
-  - ioc
+  - attack.t1621
+  - attack.t1556.006
+  - attack.credential_access
   - cisco.duo
 logsource:
   language: ESQL

@@ -14,10 +14,9 @@ references:
   - "https://attack.mitre.org/techniques/T1110/"
   - "https://duo.com/docs/adminapi#authentication-logs"
 tags:
-  - cybersecurity
-  - ioc
+  - attack.t1110
+  - attack.credential_access
   - cisco.duo
-  - brute.force
 logsource:
   language: ESQL
   platform: Huntress SIEM

@@ -5,15 +5,16 @@ description: >
   Find all logs where the event provider is equal to ITDR and the logon error is Blocked By Conditional Access.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2025/06/24
+modified: 2026/05/02
 references:
   - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
   - "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"
 tags:
-  - cybersecurity
+  - attack.t1078.004
+  - attack.t1110
+  - attack.credential_access
+  - attack.initial_access
   - microsoft.entra.id
-  - azure.active.directory
-  - cap
 logsource:
   language: ESQL
   platform: Huntress SIEM
