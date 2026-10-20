@@ -32,7 +32,9 @@ query: >
       itdr.UserKey,
       itdr.UserId,
       itdr.ClientIP,
-      itdr.DeviceProperties,
+      itdr.DeviceProperties.OS,
+      itdr.DeviceProperties.BrowserType,
+      itdr.DeviceProperties.IsCompliant,
       itdr.LogonError
   | LIMIT
       10

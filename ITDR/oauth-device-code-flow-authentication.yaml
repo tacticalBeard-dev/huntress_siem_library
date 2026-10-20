@@ -25,28 +25,28 @@ logsource:
   platform: Huntress SIEM
   type: ITDR
 analyst_notes: >
-  Investigation steps when this fires: Check the client IP against your known user
-  population — attacker infrastructure commonly uses residential proxy ranges. Look for a
-  non-interactive sign-in from a different IP for the same user within 5-10 minutes of
-  the device code event as that is the attacker using the token. Check for inbox rule
-  creation shortly after the sign-in. Containment: disable the account and revoke all
-  refresh tokens — password reset alone does not invalidate existing tokens. Validate
-  field names against your specific ITDR log format as device code authentication may
-  surface in itdr.Operation or itdr.LogonError depending on ingestion configuration.
+  In the unified audit log a device code sign-in carries the request type Cmsi:Cmsi (cross-machine
+  sign-in) inside itdr.ExtendedProperties.Value, on UserLoggedIn and UserLoginFailed records. There is
+  no separate device code operation or logon error. Check itdr.ApplicationId: well-known device code
+  clients include 04b07795-8ddb-461a-bbee-02f9e1bf7b46 (Azure CLI). Investigation steps when this fires:
+  check the client IP against your known user population, since attacker infrastructure commonly uses
+  residential proxy ranges. Look for a sign-in from a different IP for the same user shortly after the
+  device code event, as that is the attacker using the token. Check for inbox rule creation shortly
+  after the sign-in. Containment: disable the account and revoke all refresh tokens; a password reset
+  alone does not invalidate existing tokens.
 query: >
   from logs
   | WHERE
       event.provider=="ITDR"
   | WHERE
-      itdr.Operation LIKE "%DeviceCode%"
-      OR itdr.LogonError LIKE "%DeviceCode%"
-      OR itdr.Operation LIKE "%device_code%"
+      CONTAINS(itdr.ExtendedProperties.Value, "Cmsi:Cmsi")
   | KEEP
+      @timestamp,
       itdr.UserId,
       itdr.UserKey,
-      itdr.ClientIP,
       itdr.Operation,
-      itdr.LogonError,
-      itdr.DeviceProperties
-  | LIMIT
-      10
+      itdr.ErrorNumber,
+      itdr.ApplicationId,
+      itdr.ClientIP,
+      itdr.DeviceProperties.OS,
+      itdr.DeviceProperties.BrowserType

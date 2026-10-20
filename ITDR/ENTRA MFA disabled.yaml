@@ -25,7 +25,7 @@ query: >
   from logs
   | WHERE
       event.provider=="ITDR"
-      AND itdr.Operation=="Disable Strong Authentication."
+      AND itdr.Operation LIKE "Disable Strong Authentication*"
   | KEEP
       itdr.Operation,
       itdr.UserId,

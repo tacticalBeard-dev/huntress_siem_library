@@ -32,12 +32,14 @@ query: >
   from logs
   | WHERE
       event.provider=="ITDR"
-      AND itdr.Operation=="UserLoggedIn"
+      AND TO_LOWER(itdr.Operation)=="userloggedin"
   | STATS
       ip_count = COUNT_DISTINCT(itdr.ClientIP),
       login_count = COUNT()
       BY itdr.UserId
   | WHERE
       ip_count >= 2
+  | SORT
+      ip_count DESC
   | LIMIT
       10
