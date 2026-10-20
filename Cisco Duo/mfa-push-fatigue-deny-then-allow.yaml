@@ -1,4 +1,4 @@
-title: MFA Push Fatigue — Repeated Denials Followed by Approval
+title: MFA Push Fatigue - Repeated Denials Followed by Approval
 id: null
 status: Production
 description: >
@@ -23,31 +23,24 @@ logsource:
   platform: Huntress SIEM
   type: Cisco Duo
 analyst_notes: >
-  The result field uses denied for user-rejected pushes and fraud when the user reports
-  the request as suspicious via the Duo app. An allow result following multiple denied
-  results for the same user and application is the pattern to investigate. Check whether
-  the approving authentication came from a different IP or device than the denials as a
-  location change between denial and approval is strong additional evidence of account
-  compromise.
+  Each row is one user and one result, with its count and first and last time seen. Duo push
+  factors are duo_push and verified_duo_push (lowercase). Results are denied (user rejected or
+  didn't respond), fraud (user reported the push as suspicious) and success (approved). The pattern
+  to investigate is a user with several denied or fraud rows and a success row whose first_seen is
+  after the denials' last_seen. Check whether the approval came from a different IP or device than
+  the denials; a location change between denial and approval is strong additional evidence of
+  account compromise.
 query: >
   from logs
   | WHERE
       event.provider=="Duo"
-  | WHERE
-      duo.result=="denied"
-      OR duo.result=="fraud"
-      OR duo.result=="allow"
-  | WHERE
-      duo.factor LIKE "%Push%"
-  | KEEP
-      duo.email,
-      duo.result,
-      duo.reason,
-      duo.factor,
-      duo.application.name,
-      duo.access_device.ip,
-      duo.access_device.location.city,
-      duo.access_device.location.state,
-      duo.access_device.location.country
-  | LIMIT
-      10
+      AND duo.factor IN ("duo_push", "verified_duo_push")
+      AND duo.result IN ("denied", "fraud", "success")
+  | STATS
+      events = COUNT(*),
+      ips = COUNT_DISTINCT(duo.access_device.ip),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY duo.email, duo.result
+  | SORT
+      duo.email ASC
