@@ -2,7 +2,7 @@ title: All Attack Activity
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Syslog-Sonicwall and the event codes match an attack activity.
+  Find all logs where the event provider is equal to Syslog-SonicWall and the event codes match an attack activity.
 author: tacticalbeard-dev
 date: 2025/07/02
 modified: 2026/05/02
@@ -21,7 +21,7 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Sonicwall
+  type: Syslog-SonicWall
 analyst_notes: >
   22 = Ping of Death Blocked (Ping of death dropped)
   23 = IP Spoof Detected (IP spoof dropped)
@@ -54,7 +54,6 @@ query: >
       OR event.code==177
       OR event.code==178
       OR event.code==179
-      OR event.code==181
       OR event.code==267
       OR event.code==606
       OR event.code==1373

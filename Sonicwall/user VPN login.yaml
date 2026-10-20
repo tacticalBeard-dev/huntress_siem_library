@@ -2,7 +2,7 @@ title: User VPN Login
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Syslog-Sonicwall and the event codes equals 237 User VPN Login.
+  Find all logs where the event provider is equal to Syslog-SonicWall and the event codes equals 237 User VPN Login.
 author: tacticalbeard-dev
 date: 2025/07/02
 modified: 2026/05/02
@@ -19,11 +19,12 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Sonicwall
+  type: Syslog-SonicWall
 analyst_notes: >
   237 = User VPN Login (Authentication Access)
   Failed VPN logins could be an indication of targeted or random bruteforce attempts.
   It is also an indication of a potentially exposed VPN attack vector when source is not trusted location.
+  These events reach the SIEM only when the firewall's syslog includes the Authentication Access log category.
 query: >
   from logs
   | WHERE
