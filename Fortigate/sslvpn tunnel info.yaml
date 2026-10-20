@@ -20,14 +20,13 @@ logsource:
 analyst_notes: >
   Event Code 39948 - SSL tunnel shutdown
   Event Code 39947 - SSL tunnel established (tunnel established)
-  Event Code 39424 - SSL tunnel established (login successfuly)
+  Event Code 39424 - SSL VPN user tunnel up (login successful)
 query: >
   from logs
   | WHERE
       event.provider=="Syslog-Fortigate"
-      AND event.code==39424
-      OR event.code==39947
-      OR event.code==39948
+  | WHERE
+      event.code IN (39424, 39947, 39948)
   | KEEP
       host.hostname,
       event.code,

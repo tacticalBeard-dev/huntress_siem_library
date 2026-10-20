@@ -2,8 +2,9 @@ title: FortiGate Firmware Version Change
 id: null
 status: Production
 description: >
-  Detects FortiGate firmware upgrade or downgrade events logged in the system event log.
-  Unauthorized firmware downgrades are a documented attack pattern — an attacker or
+  Detects FortiGate firmware upgrade, downgrade, and image restore events logged in the
+  system event log, matched on Fortinet's documented log IDs. Unauthorized firmware
+  downgrades are a documented attack pattern. An attacker or
   misconfigured change management process may revert a device to a version with known
   exploitable CVEs. Firmware changes should always be correlated with a change management
   record. Downgrades in particular should be treated as a critical event requiring
@@ -14,6 +15,7 @@ modified: 2026/05/02
 references:
   - "https://attack.mitre.org/techniques/T1601/"
   - "https://www.fortiguard.com/psirt"
+  - "https://docs.fortinet.com/document/fortigate/7.4.7/fortios-log-message-reference"
   - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
 tags:
   - attack.t1601
@@ -24,25 +26,26 @@ logsource:
   platform: Huntress SIEM
   type: Syslog-Fortigate
 analyst_notes: >
-  Firmware change events are typically captured in the event name or reason field and
-  contain terms like firmware, upgraded, or downgraded along with version strings. Any
-  downgrade should immediately trigger a CVE review against the version the device was
-  reverted to — check the Fortinet PSIRT advisory page for the specific version.
-  Cross-reference with your change management system to determine whether the change
-  was authorized.
+  Event codes (FortiOS log message reference): 32201 image loaded, 32202 image restored,
+  32215 image updated, 32235 image restored from FortiGuard, 32262 image restore confirmed,
+  22085 device upgrade succeeded, 22096 automatic upgrade succeeded, 32226 image load
+  failed, 32194 image update failed. event.name only holds a category label such as
+  "event:system", so match on event.code, not on text. The version strings are in the
+  raw event (event.original). Any downgrade should immediately trigger a CVE review
+  against the version the device was reverted to; check the Fortinet PSIRT advisory page
+  for that version. Cross-reference with your change management system to determine
+  whether the change was authorized. Code 32103 ("New firmware is available from
+  FortiGuard") is a notice, not a change, and is not included.
 query: >
   from logs
   | WHERE
       event.provider=="Syslog-Fortigate"
   | WHERE
-      event.name LIKE "%firmware%"
-      OR event.name LIKE "%upgraded%"
-      OR event.name LIKE "%downgraded%"
-      OR fortigate.reason LIKE "%firmware%"
+      event.code IN (22085, 22096, 32194, 32201, 32202, 32215, 32226, 32235, 32262)
   | KEEP
       host.hostname,
       event.code,
-      event.name,
+      message,
       fortigate.duser,
       fortigate.reason,
       fortigate.outcome

@@ -2,7 +2,7 @@ title: Failed SSLVPN Logins
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Syslog-Fortigate and the event code is related to failed SSLVPN logins.
+  Find all logs where the event provider is equal to Syslog-Fortigate and the event code is 39426 (SSL-VPN login failed).
 author: tacticalbeard-dev
 date: 2025/06/26
 modified: 2026/05/02
@@ -22,16 +22,18 @@ logsource:
 analyst_notes: >
   Failed SSLVPN logins could be an indication of targeted or random bruteforce attempts.
   It is also an indication of a potentially exposed SSLVPN attack vector when source is not trusted location.
+  Event code 39426 is LOG_ID_EVENT_SSL_VPN_USER_SSL_LOGIN_FAIL. The remote client IP is
+  in source.ip (also fortigate.dst); fortigate.src is empty on SSL-VPN events.
 query: >
   from logs
   | WHERE
       event.provider=="Syslog-Fortigate"
-      AND event.code==39426
-      OR event.code==37130
+  | WHERE
+      event.code==39426
   | KEEP
       host.hostname,
       event.code,
-      event.name,
+      source.ip,
       fortigate.duser,
       fortigate.dst,
       fortigate.reason

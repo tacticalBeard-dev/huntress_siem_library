@@ -37,16 +37,7 @@ query: >
       event.provider=="Syslog-Fortigate"
       AND event.code==32001
   | WHERE
-      fortigate.src NOT LIKE "10.%"
-      AND fortigate.src NOT LIKE "192.168.%"
-      AND fortigate.src NOT LIKE "172.16.%"
-      AND fortigate.src NOT LIKE "172.17.%"
-      AND fortigate.src NOT LIKE "172.18.%"
-      AND fortigate.src NOT LIKE "172.19.%"
-      AND fortigate.src NOT LIKE "172.2%.%"
-      AND fortigate.src NOT LIKE "172.30.%"
-      AND fortigate.src NOT LIKE "172.31.%"
-      AND fortigate.src NOT LIKE "127.%"
+      NOT CIDR_MATCH(fortigate.src, "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8")
   | KEEP
       host.hostname,
       fortigate.src,
