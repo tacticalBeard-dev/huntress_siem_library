@@ -69,5 +69,3 @@ query: >
       source.ip,
       sonicwall.msg,
       sonicwall.note
-  | LIMIT
-      10

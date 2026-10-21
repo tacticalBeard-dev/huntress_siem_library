@@ -36,5 +36,3 @@ query: >
       itdr.DeviceProperties.BrowserType,
       itdr.DeviceProperties.IsCompliant,
       itdr.LogonError
-  | LIMIT
-      10

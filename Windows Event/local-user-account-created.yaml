@@ -41,5 +41,3 @@ query: >
       winlog.event_data.TargetUserName,
       winlog.event_data.SamAccountName,
       winlog.event_data.DisplayName
-  | LIMIT
-      10

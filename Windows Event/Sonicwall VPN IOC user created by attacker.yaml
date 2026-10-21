@@ -28,5 +28,3 @@ query: >
       winlog.event_data.TargetUserName =="backupSQL"
       or
       winlog.event_data.TargetUserName =="lockadmin"
-  | LIMIT
-      10

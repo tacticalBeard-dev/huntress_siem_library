@@ -33,5 +33,3 @@ query: >
       winlog.event_data.DnsServerList,
       winlog.event_data.Ipaddress,
       winlog.event_data.ErrorCode
-  | LIMIT
-      10

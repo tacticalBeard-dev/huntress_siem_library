@@ -38,5 +38,3 @@ query: >
       sonicwall.usr,
       sonicwall.sess,
       message
-  | LIMIT
-      10

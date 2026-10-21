@@ -32,5 +32,3 @@ query: >
     | WHERE
         event.provider=="Syslog-Meraki"
         AND meraki.event_type=="security_event"
-    | LIMIT
-        10

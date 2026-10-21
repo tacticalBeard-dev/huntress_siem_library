@@ -44,5 +44,3 @@ query: >
       failure_count >= 10
   | SORT
       failure_count DESC
-  | LIMIT
-      10

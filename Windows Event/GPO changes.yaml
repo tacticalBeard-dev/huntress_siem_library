@@ -33,5 +33,3 @@ query: >
       message, 
       winlog.event_data.ObjectDN, 
       winlog.event_data.OperationType 
-  | LIMIT
-      10

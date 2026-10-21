@@ -23,5 +23,3 @@ query: >
       event.provider=="Microsoft-Windows-Security-Auditing" 
   | WHERE 
       winlog.event_data.ProcessName == "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
-  | LIMIT 
-      10

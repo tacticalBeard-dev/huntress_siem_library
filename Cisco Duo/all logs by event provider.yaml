@@ -23,5 +23,3 @@ query: >
   from logs 
   | WHERE
     event.provider=="Duo"
-  | LIMIT
-    10

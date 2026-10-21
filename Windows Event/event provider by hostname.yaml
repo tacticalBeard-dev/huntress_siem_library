@@ -23,5 +23,3 @@ query: >
       event.provider=="Microsoft-Windows-Security-Auditing" 
   | WHERE 
       host.hostname == "[computername].[domain]"
-  | LIMIT 
-      10

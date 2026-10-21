@@ -34,5 +34,3 @@ query: >
     winlog.event_data.ObjectName,
     winlog.event_data.ProcessName,
     winlog.event_data.NewValue
-  | LIMIT 
-      10

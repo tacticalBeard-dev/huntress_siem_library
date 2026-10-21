@@ -31,5 +31,3 @@ query: >
       itdr.UserId,
       itdr.UserType,
       itdr.ObjectId
-  | LIMIT
-      10

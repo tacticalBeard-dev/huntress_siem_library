@@ -35,5 +35,3 @@ query: >
       source.host.name,
       user.name,
       winlog.channel
-  | LIMIT 
-      10

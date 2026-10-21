@@ -41,5 +41,3 @@ query: >
       ip_count >= 2
   | SORT
       ip_count DESC
-  | LIMIT
-      10

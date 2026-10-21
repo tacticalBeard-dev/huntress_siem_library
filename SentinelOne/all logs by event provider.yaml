@@ -22,5 +22,3 @@ query: >
   from logs 
   | WHERE
     event.provider=="Syslog-SentinelOne"
-  | LIMIT
-    10

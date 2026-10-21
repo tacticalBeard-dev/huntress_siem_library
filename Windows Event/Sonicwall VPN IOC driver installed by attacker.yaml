@@ -35,5 +35,3 @@ query: >
       winlog.event_data.ServiceName=="rwdrv.sys"
       or
       winlog.event_data.ServiceName=="hlpdrv.sys"
-  | LIMIT
-      10

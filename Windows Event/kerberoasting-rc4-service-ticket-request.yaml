@@ -45,5 +45,3 @@ query: >
       winlog.event_data.IpPort,
       winlog.event_data.TicketEncryptionType,
       winlog.event_data.Status
-  | LIMIT
-      10

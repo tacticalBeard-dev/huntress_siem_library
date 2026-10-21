@@ -37,5 +37,3 @@ query: >
       fortigate.duser,
       fortigate.dst,
       fortigate.reason
-  | LIMIT
-      10

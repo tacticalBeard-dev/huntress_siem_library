@@ -28,5 +28,3 @@ query: >
       host.ip,
       fortigate.src,
       fortigate.dst
-  | LIMIT
-      10

@@ -47,5 +47,3 @@ query: >
       winlog.event_data.AuthenticationPackageName,
       winlog.event_data.KeyLength,
       winlog.event_data.WorkstationName
-  | LIMIT
-      10

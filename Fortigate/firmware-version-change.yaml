@@ -49,5 +49,3 @@ query: >
       fortigate.duser,
       fortigate.reason,
       fortigate.outcome
-  | LIMIT
-      10

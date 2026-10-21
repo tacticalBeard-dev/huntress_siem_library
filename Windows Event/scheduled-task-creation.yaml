@@ -41,5 +41,3 @@ query: >
       winlog.event_data.SubjectDomainName,
       winlog.event_data.TaskName,
       winlog.event_data.TaskContent
-  | LIMIT
-      10

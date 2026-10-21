@@ -46,5 +46,3 @@ query: >
       fortigate.FTNTFGTmethod,
       fortigate.outcome,
       event.code
-  | LIMIT
-      10

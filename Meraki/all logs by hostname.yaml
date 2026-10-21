@@ -28,5 +28,3 @@ query: >
   | KEEP
       host.hostname,
       host.ip
-  | LIMIT
-      10

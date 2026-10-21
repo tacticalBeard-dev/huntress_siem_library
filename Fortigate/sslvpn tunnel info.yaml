@@ -38,5 +38,3 @@ query: >
       fortigate.FTNTFGTduration,
       fortigate.out,
       fortigate.in
-  | LIMIT
-      10
