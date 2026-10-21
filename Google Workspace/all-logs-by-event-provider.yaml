@@ -1,0 +1,54 @@
+title: All Logs by Event Provider
+id: 7a25fc9b-f303-411a-b79e-2e38c37fbe55
+status: Production
+description: >
+  Count Google Workspace login and account events by type. A quick check that the Google
+  Workspace integration is sending logs, and a list of the event types available.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+  - "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/login"
+tags:
+  - google.workspace
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR-GWS"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR-GWS"
+  | STATS
+      events = COUNT(*),
+      last_seen = MAX(@timestamp)
+      BY event.code, event.action
+  | SORT
+      events DESC
+expected_result: >
+  One row per event type (event.code) and event name (event.action), for example login /
+  login_success, login / login_failure, password_change / password_edit, dbsc_event /
+  dbsc_key_binding.
+outcomes:
+  rows: >
+    Google Workspace logs are reaching the SIEM. Open a raw row to see the fields: user.email,
+    source.ip, source.as.organization.name, event.outcome and google.events.parameters.* (login
+    type, challenge method).
+  empty: >
+    No Google Workspace logs arrived in this window. Check the ITDR Google Workspace integration
+    before treating anything as clean.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Drive, Gmail and Admin console activity may not be ingested; check which
+  event.code values appear.
+analyst_notes: >
+  event.code is the Google activity type and event.action the event name from Google's Reports
+  API.

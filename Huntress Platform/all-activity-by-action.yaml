@@ -1,0 +1,57 @@
+title: All Activity by Action
+id: 22ef8ace-55ef-4504-af8c-710d0a742724
+status: Production
+description: >
+  Count Huntress portal audit events by action, outcome and portal user. A quick check of who
+  did what in the Huntress console, including agent uninstalls, invitations and remediation
+  approvals.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/19223729361939"
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Searching-Logs-ESQL"
+tags:
+  - huntress.platform
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Huntress Platform"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Huntress Platform"
+  | STATS
+      events = COUNT(*),
+      last_seen = MAX(@timestamp)
+      BY event.action, event.outcome, client.user.email
+  | SORT
+      events DESC
+expected_result: >
+  Rows for any account where people use the Huntress console: account access, agent uninstalls,
+  security awareness training changes, remediation approvals, invitations.
+outcomes:
+  rows: >
+    One row per action, outcome and portal user. Check agent-uninstall (see agent-
+    uninstalled.yaml), account-invitation-create and organization-invitation-create (new people
+    getting portal access), remediations-rejected, and managed-identity-attribute-rule changes,
+    especially from a user who doesn't normally do them.
+  empty: >
+    No Huntress portal activity in this window, or portal audit logs aren't reaching the SIEM
+    for this account.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. These are actions taken in the Huntress console, not on endpoints. client.ip
+  and user_agent.original show where the portal user connected from.
+analyst_notes: >
+  Example actions: account-accessed, agent-uninstall, sat-learner-updated, sat-learner-deleted,
+  infection-report-resolved, remediations-approved, remediations-rejected, app-control-rmm-tool-
+  detect, managed-identity-attribute-rule-add, account-invitation-create, organization-
+  invitation-create.

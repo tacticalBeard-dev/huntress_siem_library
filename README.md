@@ -32,7 +32,7 @@ Huntress SIEM runs a restricted ES|QL. These rules come from testing against liv
 | Wait for Done | A `stats` search shows nothing until it's finished ("Aggregating results..." walks back through the window). A raw search shows the newest 100 rows first and loads older rows only as you scroll; scroll until the grid says Done before treating a short or empty result as complete. |
 | Headers aren't field names | The grid relabels some columns (for example `itdr.ClientIP` shows as `source.ip`) and always adds Organization. Take field names from a row's details. |
 | Missing fields count as null | `COUNT(field)` counts only rows where the field exists (Huntress's docs say missing fields read as empty values; testing showed otherwise). Empty strings still count. |
-| Functions confirmed | `TO_LOWER`, `CONTAINS`, `CIDR_MATCH`, `IN (...)`, `COUNT`, `count_distinct`, `MIN`, `MAX`, `SORT` after `STATS`. `TO_STRING` fails. Huntress also documents `EVAL`, `DROP`, `RENAME` and `MV_EXPAND`; the queries here don't use them. |
+| Functions confirmed | `TO_LOWER`, `CONTAINS`, `CIDR_MATCH`, `IN (...)`, `COUNT`, `count_distinct`, `MIN`, `MAX`, `SORT` after `STATS`. `TO_STRING` fails. `EVAL` with `CASE(condition, 1, 0)` works for counting several conditions side by side, but `AND` inside `CASE` fails to parse; keep each `CASE` to one condition. Huntress also documents `DROP`, `RENAME` and `MV_EXPAND`; the queries here don't use them. |
 
 **About the time picker:**
 
@@ -66,7 +66,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Provider | `Duo` |
 | Authentication records | `duo.email`, `duo.result` (`success`, `denied`, `fraud`), `duo.reason` (for example `user_approved`, `no_response`), `duo.factor` (for example `duo_push`, `verified_duo_push`, `sms_passcode`), `duo.application.name`, `duo.access_device.ip`, `duo.access_device.location.*` |
 | Telephony records | `duo.context`, `duo.phone`, `duo.type` (`sms`, `phone`) |
-| Traps | All values are lowercase. There's no `allow` result. Bypass code logins are a `success` with reason `bypass_user`. |
+| Traps | All values are lowercase. There's no `allow` result. Bypass code logins are a `success` with reason `bypass_user` and an empty factor. |
 
 ### FortiGate
 
@@ -109,13 +109,29 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Common fields | `event.code` (8-character hex message ID, text), `event.action` (`Allow`, `Deny`, `logon`, `logon-failed`, `connect`, `disconnect`), `user.name`, `source.ip`, `source.as.organization.name`, `xtm.auth_server`, `xtm.user_type`, `event.reason` |
 | Traps | Message IDs are text, so quote them (`event.code=="11000005"`). On some logon messages `xtm.user_type` holds the unparsed end of the message, including the Firebox serial. |
 
+### Google Workspace
+
+| Item | Detail |
+|---|---|
+| Provider | `ITDR-GWS` |
+| Common fields | `event.code` (Google activity type, for example `login`, `password_change`, `recovery_info_change`, `account_warning`), `event.action` (event name, for example `login_success`, `login_failure`, `password_edit`), `event.outcome`, `user.email`, `source.ip`, `source.as.organization.name`, `google.events.parameters.name` and `.value` |
+| Traps | Drive, Gmail and Admin console activity may not be ingested; check which `event.code` values arrive. |
+
+### Huntress Platform
+
+| Item | Detail |
+|---|---|
+| Provider | `Huntress Platform` (the Huntress portal's own audit log) |
+| Common fields | `event.action` (for example `agent-uninstall`, `account-accessed`, `remediations-approved`, `account-invitation-create`), `event.outcome`, `client.user.email`, `client.user.role`, `client.ip`, `client.as.organization.name`, `account.name`, `event.details.agent_hostnames`, `user_agent.original` |
+| Traps | These are actions taken in the Huntress console, not on endpoints. |
+
 ### SentinelOne
 
 | Item | Detail |
 |---|---|
 | Provider | `Syslog-SentinelOne` |
 | Common fields | `event.code`, `message`, `sentinelone.*` (for example `sentinelone.eventDesc`, `sentinelone.activityType`, `sentinelone.deviceHostName`), `file.hash.sha256`, `file.path`, `process.command_line` |
-| Traps | Only alerts and threat activity are ingested, not endpoint telemetry. Common codes: 19 new active threat, 2001 kill, 2004 quarantine, 2009 quarantine failed, 2028 incident status changed, 2030 analyst verdict changed. |
+| Traps | `host.hostname` is blank; the endpoint name is in `sentinelone.deviceHostName`. Only alerts and threat activity are ingested, not endpoint telemetry. Common codes: 19 new active threat, 2001 kill, 2004 quarantine, 2009 quarantine failed, 2028 incident status changed, 2030 analyst verdict changed. |
 
 ### Windows event logs
 
@@ -173,6 +189,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | [all-logs-by-event-provider.yaml](Cisco%20Duo/all-logs-by-event-provider.yaml) | Check Duo logs are arriving and see the fields |
 | [authorization-failure.yaml](Cisco%20Duo/authorization-failure.yaml) | List denied authentications |
 | [authorization-success.yaml](Cisco%20Duo/authorization-success.yaml) | List successful authentications |
+| [bypass-code-authentication.yaml](Cisco%20Duo/bypass-code-authentication.yaml) | List logins that used a bypass code instead of MFA |
 | [duo-authentication-failure-spike.yaml](Cisco%20Duo/duo-authentication-failure-spike.yaml) | Find users with five or more failures |
 | [duo-type-sms.yaml](Cisco%20Duo/duo-type-sms.yaml) | Find SMS passcodes sent |
 | [mfa-push-fatigue-deny-then-allow.yaml](Cisco%20Duo/mfa-push-fatigue-deny-then-allow.yaml) | Spot denied pushes followed by an approval |
@@ -215,6 +232,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | [Meraki: all-security-alerts.yaml](Meraki/all-security-alerts.yaml) | List IDS and malware scan events |
 | [Meraki: content-filtering-blocks.yaml](Meraki/content-filtering-blocks.yaml) | Summarize content filtering blocks by category and client |
 | [SentinelOne: all-logs-by-event-provider.yaml](SentinelOne/all-logs-by-event-provider.yaml) | List SentinelOne alerts and threat activity |
+| [SentinelOne: threat-mitigation-by-host.yaml](SentinelOne/threat-mitigation-by-host.yaml) | Count new threats, kills, quarantines and failed quarantines per host |
 
 **Palo Alto**
 
@@ -231,6 +249,21 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | [all-logs-by-hostname.yaml](WatchGuard/all-logs-by-hostname.yaml) | Check WatchGuard logs are arriving, by Firebox and message ID |
 | [failed-logons.yaml](WatchGuard/failed-logons.yaml) | Rank VPN and management logon failures |
 | [successful-logons.yaml](WatchGuard/successful-logons.yaml) | Summarize management and VPN logons by user and source |
+
+**Google Workspace**
+
+| Query | Use it to |
+|---|---|
+| [account-security-changes.yaml](Google%20Workspace/account-security-changes.yaml) | List password, recovery and passkey changes and Google's account warnings |
+| [all-logs-by-event-provider.yaml](Google%20Workspace/all-logs-by-event-provider.yaml) | Check Google Workspace logs are arriving and see the event types |
+| [login-failures.yaml](Google%20Workspace/login-failures.yaml) | Rank login failures by user, IP and network owner |
+
+**Huntress Platform**
+
+| Query | Use it to |
+|---|---|
+| [agent-uninstalled.yaml](Huntress%20Platform/agent-uninstalled.yaml) | List agents uninstalled from the Huntress portal, and by whom |
+| [all-activity-by-action.yaml](Huntress%20Platform/all-activity-by-action.yaml) | Count Huntress portal actions by user |
 
 **Windows event logs**
 
@@ -287,6 +320,10 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | RDP brute force or lateral movement | [rdp-logons.yaml](Windows%20Event/rdp-logons.yaml), [account-logon-failed.yaml](Windows%20Event/account-logon-failed.yaml), [kerberos-preauth-failures.yaml](Windows%20Event/kerberos-preauth-failures.yaml), [account-lockouts.yaml](Windows%20Event/account-lockouts.yaml) |
 | Remote access tool abuse or help desk scam | [screenconnect-relay-servers.yaml](Windows%20Event/screenconnect-relay-servers.yaml), [quick-assist-activity-by-host.yaml](Windows%20Event/quick-assist-activity-by-host.yaml), [service-installed.yaml](Windows%20Event/service-installed.yaml) |
 | Ransomware precursors (new services, PowerShell, cleared logs) | [service-installed.yaml](Windows%20Event/service-installed.yaml), [powershell-suspicious-script-block.yaml](Windows%20Event/powershell-suspicious-script-block.yaml), [event-log-cleared.yaml](Windows%20Event/event-log-cleared.yaml) |
+| MFA bypassed | [bypass-code-authentication.yaml](Cisco%20Duo/bypass-code-authentication.yaml), [entra-mfa-disabled.yaml](ITDR/entra-mfa-disabled.yaml) |
+| An endpoint threat that wasn't cleaned up | [threat-mitigation-by-host.yaml](SentinelOne/threat-mitigation-by-host.yaml) |
+| A Google Workspace account takeover | [login-failures.yaml](Google%20Workspace/login-failures.yaml), [account-security-changes.yaml](Google%20Workspace/account-security-changes.yaml) |
+| Misuse of the Huntress portal | [agent-uninstalled.yaml](Huntress%20Platform/agent-uninstalled.yaml), [all-activity-by-action.yaml](Huntress%20Platform/all-activity-by-action.yaml) |
 | Kerberos or NTLM credential abuse | [kerberoasting-rc4-service-ticket-request.yaml](Windows%20Event/kerberoasting-rc4-service-ticket-request.yaml), [overpass-the-hash-rc4-tgt-request.yaml](Windows%20Event/overpass-the-hash-rc4-tgt-request.yaml), [pass-the-hash-ntlm-network-logon-zero-key.yaml](Windows%20Event/pass-the-hash-ntlm-network-logon-zero-key.yaml) |
 | An IOC sweep | [entra-user-activity-by-actor-ip-address.yaml](ITDR/entra-user-activity-by-actor-ip-address.yaml), [sonicwall-vpn-ioc-login-by-ip.yaml](Sonicwall/sonicwall-vpn-ioc-login-by-ip.yaml) |
 | The ConnectWise Cloud Backup (SkyKick) compromise, October 2026 | [connectwise-cloud-backup-ioc-ip-sweep.yaml](ITDR/connectwise-cloud-backup-ioc-ip-sweep.yaml), [connectwise-cloud-backup-ioc-ip-detail.yaml](ITDR/connectwise-cloud-backup-ioc-ip-detail.yaml), [connectwise-cloud-backup-app-id-sweep.yaml](ITDR/connectwise-cloud-backup-app-id-sweep.yaml), [connectwise-skykick-app-name-search.yaml](ITDR/connectwise-skykick-app-name-search.yaml), then [entra-persistence-operation-inventory.yaml](ITDR/entra-persistence-operation-inventory.yaml) |
@@ -324,7 +361,7 @@ Queries use [MITRE ATT&CK](https://attack.mitre.org/) tags where a technique cle
 
 - Tactic: `attack.<tactic_name>`, for example `attack.credential_access`, `attack.persistence`
 - Technique: `attack.t<id>` or `attack.t<id>.<sub>`, for example `attack.t1078`, `attack.t1558.003`
-- Log source: one tag naming the data source, for example `windows.event`, `cisco.duo`, `fortigate`, `microsoft.entra.id`, `sonicwall`, `meraki`, `sentinelone`, `palo.alto`, `watchguard`
+- Log source: one tag naming the data source, for example `windows.event`, `cisco.duo`, `fortigate`, `microsoft.entra.id`, `sonicwall`, `meraki`, `sentinelone`, `palo.alto`, `watchguard`, `google.workspace`, `huntress.platform`
 
 Utility and starter queries that don't map to a technique carry only the log source tag.
 

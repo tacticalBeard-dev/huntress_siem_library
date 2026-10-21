@@ -1,0 +1,60 @@
+title: Account Security Changes
+id: baafcc74-8ac0-4ef8-839c-0da3516da163
+status: Production
+description: >
+  List Google Workspace password changes, recovery phone and email changes, new passkeys, and
+  Google's suspicious login and risky action warnings. Attackers change recovery details to keep
+  control of a taken-over account.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/login"
+  - "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/user-accounts"
+  - "https://attack.mitre.org/techniques/T1098/"
+tags:
+  - attack.t1098
+  - attack.persistence
+  - google.workspace
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR-GWS"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR-GWS"
+      AND event.action IN ("password_edit", "recovery_phone_edit", "recovery_email_edit", "passkey_enrolled", "2sv_disable", "suspicious_login", "risky_sensitive_action_allowed", "account_disabled_password_leak")
+  | KEEP
+      @timestamp,
+      event.code,
+      event.action,
+      user.email,
+      source.ip,
+      source.as.organization.name
+expected_result: >
+  A few rows, mostly password changes.
+outcomes:
+  rows: >
+    A recovery phone or email change, a new passkey, or 2-step verification turned off from an
+    unfamiliar IP is the takeover pattern. suspicious_login and account_disabled_password_leak
+    are Google's own warnings and always deserve a look. Pair with login-failures.yaml for the
+    same user.
+  empty: >
+    No account security changes in this window. Google's warning events (suspicious_login,
+    account_disabled_password_leak) are rare.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Changes an admin makes in the Admin console log in the admin activity
+  report, which may not be ingested.
+analyst_notes: >
+  event.code holds the activity type (password_change, recovery_info_change, account_warning,
+  login) and event.action the specific event.
