@@ -32,5 +32,3 @@ query: >
       winlog.event_data.KeyType,
       winlog.event_data.Operation,
       message
-  | LIMIT 
-      10

@@ -30,5 +30,3 @@ query: >
       event.category,
       duo.type,
       duo.phone
-  | LIMIT
-      10

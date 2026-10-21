@@ -33,5 +33,3 @@ query: >
       winlog.event_data.ProcessId,
       winlog.event_data.Url,
       winlog.event_data.UserSid
-  | LIMIT
-      10

@@ -2,7 +2,7 @@ title: User WAN Login
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Syslog-Sonicwall and the event codes equals 238 User WAN Login.
+  Find all logs where the event provider is equal to Syslog-SonicWall and the event codes equals 238 User WAN Login.
 author: tacticalbeard-dev
 date: 2025/07/02
 modified: 2026/05/02
@@ -18,9 +18,10 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Sonicwall
+  type: Syslog-SonicWall
 analyst_notes: >
   238 = User WAN Login (Authentication Access)
+  These events reach the SIEM only when the firewall's syslog includes the Authentication Access log category.
 query: >
   from logs
   | WHERE
@@ -35,5 +36,3 @@ query: >
       sonicwall.usr,
       sonicwall.sess,
       message
-  | LIMIT
-      10

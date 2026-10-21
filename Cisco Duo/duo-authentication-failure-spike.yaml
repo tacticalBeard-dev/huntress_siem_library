@@ -1,12 +1,10 @@
-title: Duo Authentication Failure Spike — Single User
+title: Duo Authentication Failure Spike - Single User
 id: null
 status: Production
 description: >
-  Detects a high volume of Duo authentication failures for a single user which may
-  indicate a brute-force or credential stuffing attack where the attacker has valid
-  credentials and is attempting to satisfy MFA through repeated attempts. Also captures
-  bypass results which indicate Duo was circumvented — this should be rare and always
-  reviewed regardless of count.
+  Detects a high volume of Duo authentication failures (denied or fraud) for a single user and
+  application, which may indicate a brute-force or MFA fatigue attempt by someone who already has
+  valid credentials.
 author: tacticalbeard-dev
 date: 2026/05/02
 modified: 2026/05/02
@@ -22,24 +20,23 @@ logsource:
   platform: Huntress SIEM
   type: Cisco Duo
 analyst_notes: >
-  The bypass result means Duo was configured to allow access without a second factor for
-  this user or application and warrants immediate review regardless of count. For failure
-  spikes cross-reference the source IP against threat intelligence. Failures from multiple
-  geographic locations for the same user simultaneously indicate credential stuffing from
-  a botnet rather than a single attacker.
+  Duo records the outcome in duo.result (success, denied, fraud) and the cause in duo.reason
+  (for example no_response, user_cancelled, invalid_passcode). A bypass code login is a success
+  with duo.reason "bypass_user", not a failure result, so it is not counted here; review those
+  separately on every occurrence. For failure spikes, cross-reference the source IP against threat
+  intelligence. Failures from multiple locations for the same user (a high unique_ips count) point
+  to credential stuffing from many sources rather than a single attacker.
 query: >
   from logs
   | WHERE
       event.provider=="Duo"
   | WHERE
-      duo.result=="denied"
-      OR duo.result=="fraud"
-      OR duo.result=="bypass"
+      duo.result IN ("denied", "fraud")
   | STATS
-      failure_count = COUNT(),
+      failure_count = COUNT(*),
       unique_ips = COUNT_DISTINCT(duo.access_device.ip)
       BY duo.email, duo.application.name
   | WHERE
       failure_count >= 5
-  | LIMIT
-      10
+  | SORT
+      failure_count DESC

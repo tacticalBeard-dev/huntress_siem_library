@@ -2,7 +2,7 @@ title: Admin WAN Login
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Syslog-Sonicwall and the event codes equals 236 Admin WAN Login.
+  Find all logs where the event provider is equal to Syslog-SonicWall and the event codes equals 236 Admin WAN Login.
 author: tacticalbeard-dev
 date: 2025/07/02
 modified: 2026/05/02
@@ -19,12 +19,13 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Sonicwall
+  type: Syslog-SonicWall
 analyst_notes: >
   236 = Admin WAN Login (Authentication Access)
   Failed WAN logins could be an indication of targeted or random bruteforce attempts.
   It is also an indication of a potentially exposed WAN interface attack vector when source is not trusted location.
   WAN accounts with the admin role should warrant additional scrutiny.
+  These events reach the SIEM only when the firewall's syslog includes the Authentication Access log category.
 query: >
   from logs
   | WHERE
@@ -39,5 +40,3 @@ query: >
       sonicwall.usr,
       sonicwall.sess,
       message
-  | LIMIT
-      10

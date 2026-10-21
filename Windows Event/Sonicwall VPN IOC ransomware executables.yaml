@@ -42,5 +42,3 @@ query: >
       winlog.event_data.ProcessName == "C:\\ProgramData\\1.bat"
       or
       winlog.event_data.ProcessName == "C:\\ProgramData\\2.bat"
-  | LIMIT 
-      10

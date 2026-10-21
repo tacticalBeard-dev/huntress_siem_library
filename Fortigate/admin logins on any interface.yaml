@@ -41,5 +41,3 @@ query: >
       event.code,
       fortigate.outcome,
       fortigate.reason
-  | LIMIT
-      10

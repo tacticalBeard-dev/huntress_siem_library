@@ -1,8 +1,8 @@
-title: ENTRA Find All Events in a Session
+title: ENTRA Find All Events in a Browser Session
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to ITDR and message contains a specific user id and message string.
+  Find every ITDR record that shares one browser session ID, across every account that used that session.
 author: tacticalbeard-dev
 date: 2025/06/24
 modified: 2026/05/02
@@ -16,27 +16,21 @@ logsource:
   platform: Huntress SIEM
   type: ITDR
 analyst_notes: >
-  This can be used as a starter query for finding the right properties when creating your own queries.
-  Make sure to change the UserID and message string in the query.
-  EXAMPLE MESSAGES: 
-    GATFRTokenIssue, 
-    UniqueTokenIdentifier, 
-    MailItemsAccessed, 
-    AttachmentAccess, 
-    MoveToDeletedItems, 
-    SoftDelete, 
-    HardDelete, 
-    ExternalAccess, 
-    Set-MailboxCalendarConfiguration, 
-    \Calendar
+  Replace <session id lowercase> with the session ID from a sign-in row (session.id, also shown as
+  itdr.DeviceProperties.SessionId), in lowercase. The query lowercases session.id so casing in the
+  source record doesn't matter. Results include every account that signed in through the same browser
+  profile, which is how a shared or hijacked browser session shows up. Do not search the message
+  field for this: it holds only a one-line summary and never contains user IDs, IPs or session IDs.
 query: >
   from logs
   | WHERE
       event.provider=="ITDR"
-      AND itdr.UserId=="user@example.com"
-      AND message like "*message*"
+      AND TO_LOWER(session.id)=="<session id lowercase>"
   | KEEP
-      itdr.ClientIPAddress,
-      itdr.Operation
-  | LIMIT
-      10
+      @timestamp,
+      itdr.UserId,
+      itdr.UserKey,
+      itdr.Operation,
+      itdr.ErrorNumber,
+      source.ip,
+      itdr.ExtendedProperties.Value

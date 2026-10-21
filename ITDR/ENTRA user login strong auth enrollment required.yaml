@@ -33,17 +33,13 @@ query: >
   | WHERE
       event.provider=="ITDR"
   | WHERE
-      itdr.LogonError=="UserStrongAuthEnrollmentRequiredInterrupt"
-      OR itdr.LogonError=="UserStrongAuthClientAuthNRequiredInterrupt"
-      OR itdr.LogonError=="UserStrongAuthClientAuthNRequired"
-      OR itdr.LogonError=="UserStrongAuthExpired"
-      OR itdr.LogonError=="UserStrongAuthEnrollmentRequired"
+      itdr.LogonError IN ("UserStrongAuthEnrollmentRequiredInterrupt", "UserStrongAuthClientAuthNRequiredInterrupt", "UserStrongAuthClientAuthNRequired", "UserStrongAuthExpired", "UserStrongAuthEnrollmentRequired")
   | KEEP
       itdr.Operation,
       itdr.UserKey,
       itdr.UserId,
       itdr.ClientIP,
-      itdr.DeviceProperties,
+      itdr.DeviceProperties.OS,
+      itdr.DeviceProperties.BrowserType,
+      itdr.DeviceProperties.IsCompliant,
       itdr.LogonError
-  | LIMIT
-      10

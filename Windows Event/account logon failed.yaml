@@ -25,5 +25,3 @@ query: >
       event.provider=="Microsoft-Windows-Security-Auditing" 
   | WHERE 
       event.code == 4625 
-  | LIMIT 
-      10

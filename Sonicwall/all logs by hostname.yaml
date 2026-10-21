@@ -2,7 +2,7 @@ title: All Logs by Hostname
 id: null
 status: Production
 description: >
-  Find all logs where the event provider is equal to Syslog-Sonicwall.
+  Find all logs where the event provider is equal to Syslog-SonicWall.
 author: tacticalbeard-dev
 date: 2025/07/02
 modified: 2026/05/02
@@ -16,19 +16,18 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Sonicwall
+  type: Syslog-SonicWall
 analyst_notes: >
   This will give you a good starting point for finding the raw logs.
   You can use this information to verify logs are being ingested and retained.
   The raw logs will also assist with creating other queries.
+  host.hostname is not populated for SonicWall; sonicwall.sn (the firewall serial number) and host.ip identify the device.
 query: >
   from logs
   | WHERE
       event.provider=="Syslog-SonicWall"
   | KEEP
-      host.hostname,
+      sonicwall.sn,
       host.ip,
       sonicwall.src,
       sonicwall.dst
-  | LIMIT
-      10

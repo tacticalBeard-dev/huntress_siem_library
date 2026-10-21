@@ -19,16 +19,18 @@ logsource:
   platform: Huntress SIEM
   type: Windows Event
 analyst_notes: >
-  This query looks for modifications to the HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run registry key, which is a common persistence technique. It uses a partial string match for the registry key path.
+  Event 4657 (a registry value was modified) for any key under ...\CurrentVersion\Run, which covers
+  Run and RunOnce in both HKLM (\REGISTRY\MACHINE) and HKCU (\REGISTRY\USER). Run keys are a common
+  persistence technique. Windows only logs 4657 for keys that have an auditing rule (SACL) with
+  Audit Registry enabled, so add a SACL on the Run keys for this query to return anything. In the
+  query pattern each \\ matches one backslash and * is the wildcard.
 query: >
   from logs
   | where event.provider == "Microsoft-Windows-Security-Auditing"
   | where event.code == 4657
-  | where winlog.event_data.ObjectName LIKE "%REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run%"
+  | where winlog.event_data.ObjectName LIKE "*\\CurrentVersion\\Run*"
   | keep
     winlog.event_data.SubjectUserName,
     winlog.event_data.ObjectName,
     winlog.event_data.ProcessName,
     winlog.event_data.NewValue
-  | LIMIT 
-      10

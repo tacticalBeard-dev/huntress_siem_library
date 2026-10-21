@@ -19,13 +19,15 @@ logsource:
   platform: Huntress SIEM
   type: Windows Event
 analyst_notes: >
-  Event ID 4625 - Account logon failed
+  Every Security-Auditing event for an account named administrator, in any casing (Administrator,
+  ADMINISTRATOR). Add an event.code filter to narrow it, for example 4625 for failed logons or 4624
+  for successful ones.
 query: >
   from logs
-  | WHERE 
-      event.provider=="Microsoft-Windows-Security-Auditing" 
-  | WHERE 
-      user.name == "administrator"
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+  | WHERE
+      TO_LOWER(user.name) == "administrator"
   | KEEP
       event.code,
       message,
@@ -33,5 +35,3 @@ query: >
       source.host.name,
       user.name,
       winlog.channel
-  | LIMIT 
-      10

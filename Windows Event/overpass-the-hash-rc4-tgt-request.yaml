@@ -34,7 +34,7 @@ query: >
   from logs
   | WHERE
       event.provider=="Microsoft-Windows-Security-Auditing"
-      AND event.code=="4768"
+      AND event.code==4768
   | WHERE
       winlog.event_data.TicketEncryptionType=="0x17"
       AND winlog.event_data.Status=="0x0"
@@ -46,5 +46,3 @@ query: >
       winlog.event_data.TicketEncryptionType,
       winlog.event_data.PreAuthType,
       winlog.event_data.Status
-  | LIMIT
-      10

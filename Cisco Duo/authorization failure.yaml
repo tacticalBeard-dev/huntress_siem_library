@@ -36,5 +36,3 @@ query: >
       duo.event_type,
       duo.reason,
       duo.result
-  | LIMIT
-      10

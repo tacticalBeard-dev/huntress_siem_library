@@ -33,7 +33,7 @@ query: >
   from logs
   | WHERE
       event.provider=="Microsoft-Windows-Security-Auditing"
-      AND event.code=="4769"
+      AND event.code==4769
   | WHERE
       winlog.event_data.TicketEncryptionType=="0x17"
       OR winlog.event_data.TicketEncryptionType=="0x18"
@@ -45,5 +45,3 @@ query: >
       winlog.event_data.IpPort,
       winlog.event_data.TicketEncryptionType,
       winlog.event_data.Status
-  | LIMIT
-      10
