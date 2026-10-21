@@ -18,8 +18,11 @@ logsource:
   platform: Huntress SIEM
   provider: "ITDR"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
+  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
+  short or empty result as complete.
 placeholders: []
 query: >
   from logs
@@ -38,15 +41,16 @@ outcomes:
     Each row is a per-user MFA disable. itdr.UserId is who made the change and itdr.ObjectId is
     the account it was made on. Confirm it was an approved change.
   empty: >
-    No per-user MFA was disabled on this UTC day. This only covers per-user MFA (Disable Strong
+    No per-user MFA was disabled in this window. This only covers per-user MFA (Disable Strong
     Authentication); MFA turned off through Conditional Access or security defaults shows up as
     policy changes instead.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. The operation name
-  carries a trailing period in the audit log, so the query matches it as a lowercase prefix.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The operation name carries a trailing period in the audit log, so the query
+  matches it as a lowercase prefix.
 analyst_notes: >
   This will identify when strong authentication has been disabled for an account which is not typically desirable.
   At the very least this can indicate a misconfiguration or violation of standard policy.

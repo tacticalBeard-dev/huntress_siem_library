@@ -20,8 +20,9 @@ logsource:
   platform: Huntress SIEM
   provider: "Duo"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done.
 placeholders: []
 query: >
   from logs
@@ -45,18 +46,19 @@ outcomes:
     Each row is a user and application with failure_count denials and unique_ips source IPs,
     highest count first. A high unique_ips count points to attempts from many sources.
   empty: >
-    No user reached five failures for one application on this UTC day. Lower the threshold for
+    No user reached five failures for one application in this window. Lower the threshold for
     small tenants.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. Bypass code use is a
-  success, not a failure, so it is not counted here.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Duo documents bypass code use as a success (reason bypass_user), not a
+  failure, so it would not be counted here.
 analyst_notes: >
-  Duo records the outcome in duo.result (success, denied, fraud) and the cause in duo.reason
-  (for example no_response, user_cancelled, invalid_passcode). A bypass code login is a success
-  with duo.reason "bypass_user", not a failure result, so it is not counted here; review those
-  separately on every occurrence. For failure spikes, cross-reference the source IP against threat
+  Duo records the outcome in duo.result (success and denied seen in testing; Duo also documents
+  fraud) and the cause in duo.reason (for example no_response, user_cancelled, invalid_passcode).
+  Duo documents a bypass code login as a success with duo.reason "bypass_user" (not seen in
+  testing), so it would not be counted here; review those separately on every occurrence. For failure spikes, cross-reference the source IP against threat
   intelligence. Failures from multiple locations for the same user (a high unique_ips count) point
   to credential stuffing from many sources rather than a single attacker.

@@ -21,8 +21,11 @@ logsource:
   platform: Huntress SIEM
   provider: "Microsoft-Windows-Security-Auditing"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
+  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
+  short or empty result as complete.
 placeholders: []
 query: >
   from logs
@@ -46,14 +49,14 @@ outcomes:
     Each row is a user or computer account created (4720, 4741), enabled (4722), disabled (4725)
     or deleted (4726, 4743), with who did it (Subject) and to which account (Target).
   empty: >
-    No account changes on this UTC day. These events need Audit User Account Management and
-    Audit Computer Account Management enabled.
+    No account changes in this window. These events need Audit User Account Management and Audit
+    Computer Account Management enabled.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. winlog.event_data.* values are strings and field names are case sensitive.
 analyst_notes: |
   These logs are all related to User and Group Account Management.
   Event ID 4720 - A user account was created.

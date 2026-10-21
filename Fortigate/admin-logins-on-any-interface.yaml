@@ -20,8 +20,11 @@ logsource:
   platform: Huntress SIEM
   provider: "Syslog-Fortigate"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
+  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
+  short or empty result as complete.
 placeholders: []
 query: >
   from logs
@@ -47,12 +50,13 @@ outcomes:
     Each row is an admin login attempt with user, profile, source and method (https or ssh).
     Large numbers of failures from public IPs mean the management interface is exposed.
   empty: >
-    No admin logins on this UTC day, which is possible on quiet firewalls.
+    No admin logins in this window, which is possible on quiet firewalls.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone.
 analyst_notes: |
   These event codes show admin login attempts for any interface.
   Event code 32002 is Admin Logon Failed and 32001 is Admin Logon Success.

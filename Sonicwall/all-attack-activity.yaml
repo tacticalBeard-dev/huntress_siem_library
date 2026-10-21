@@ -23,8 +23,11 @@ logsource:
   platform: Huntress SIEM
   provider: "Syslog-SonicWall"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
+  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
+  short or empty result as complete.
 placeholders: []
 query: >
   from logs
@@ -63,13 +66,14 @@ outcomes:
     Each row is an attack the firewall detected and dropped, with the source IP and SonicWall's
     message. Repeated events from one source are worth blocking.
   empty: >
-    No attack events on this UTC day. Most of these codes are rare, so empty is common.
+    No attack events in this window. Most of these codes are rare, so empty is common.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. These events depend on
-  the firewall's attack logging category being sent to syslog.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. These events depend on the firewall's attack logging category being sent to
+  syslog.
 analyst_notes: |
   22 = Ping of Death Blocked (Ping of death dropped)
   23 = IP Spoof Detected (IP spoof dropped)

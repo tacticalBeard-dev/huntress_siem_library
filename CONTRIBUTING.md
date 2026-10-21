@@ -28,8 +28,8 @@ logsource:
   platform: Huntress SIEM
   provider: "ITDR"                               # exact event.provider value
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search
-  reads only the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps.
+  Wide ranges take longer. Results are complete only once the grid shows Done.
 placeholders:
   - "<ip>: the IPv4 or IPv6 address to look up, for example 203.0.113.10"
 query: >
@@ -37,7 +37,7 @@ query: >
   | WHERE
       event.provider=="ITDR"
       AND TO_LOWER(itdr.Operation)=="userloginfailed"
-      AND itdr.ClientIP=="<ip>"
+      AND (source.ip=="<ip>" OR itdr.ClientIP=="<ip>" OR itdr.ActorIpAddress=="<ip>")
   | STATS
       events = COUNT(*)
       BY itdr.UserId
@@ -55,7 +55,8 @@ outcomes:
     Check the query was pasted whole and every placeholder was replaced. Huntress
     reports parser errors as Not all query parsed or Invalid operator.
 known_limits: >
-  What the query can't see: one UTC day per search, fields that can be blank, casing.
+  What the query can't see: fields that can be blank, casing, rows whose @timestamp falls outside
+  the picker window.
 analyst_notes: >
   Background an analyst needs: what the event codes mean, how to investigate a hit.
 ```
@@ -70,12 +71,12 @@ Field rules:
 
 A query goes in only after it has returned a known result in Huntress SIEM.
 
-1. **Pick one UTC day** and set the picker as shown in the template. Write down which day you used.
-2. **Find a known row first.** Before trusting an empty result, find a real event that the query should match, using a broader search on the same day.
+1. **Pick a window that contains a known event** and write down the window you used. Wide windows are fine; they just take longer.
+2. **Find a known row first.** Before trusting an empty result, find a real event that the query should match, using a broader search over the same window.
 3. **Add one condition at a time.** Run the query after each new filter or operator and confirm the known row still comes back. Never `OR` together conditions you haven't tested; a hit can't tell you which one worked and a miss can't tell you which one failed.
 4. **Prove empty means empty.** A query that has never returned a row can't call an empty result clean. If the event is rare, say so in `outcomes.empty` and name any setting it depends on.
 5. **Check the traps.** No `limit`. `*` not `%` in `LIKE`. No `message` searches. Exact provider string and field names, which are case sensitive.
-6. **Wait for Done** before reading the result, and take field names from a row's details, not from the grid headers.
+6. **Wait for Done** before reading the result. For a raw search, scroll until the grid says Done, since older rows load only as you scroll. Take field names from a row's details, not from the grid headers.
 
 If something behaves differently from the README, open an issue with the query, the picker setting and what you saw. Leave out any client data.
 
@@ -94,7 +95,7 @@ If something behaves differently from the README, open an issue with the query, 
 - [ ] `logsource.provider` is an exact `event.provider` value.
 - [ ] Every `<placeholder>` in the query is listed under `placeholders`.
 - [ ] No `limit`, no `%` in `LIKE`, no search on `message`.
-- [ ] Tested in Huntress SIEM on one UTC day against a known row; the PR description says which day and what came back (counts only).
+- [ ] Tested in Huntress SIEM against a known row, read after Done; the PR description gives the window and what came back (counts only).
 - [ ] `outcomes.empty` says when empty isn't clean.
 - [ ] No client names, company names, real users, emails, hostnames, IPs, tenant IDs, session IDs or alert titles anywhere, including examples.
 - [ ] No em or en dashes.

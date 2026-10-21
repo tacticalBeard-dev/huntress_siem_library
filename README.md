@@ -7,7 +7,7 @@ Some queries aren't security detections. They're there for troubleshooting log i
 ## How to use a query
 
 1. Open the query's `.yaml` file and copy everything under `query:` into the Huntress SIEM search box (ES|QL mode).
-2. Set the time picker the way the file's `picker` says. For almost every query that's one UTC day (see [Read this first](#read-this-first)).
+2. Set the time picker to the period you want to search. Wide windows work but take longer (see [Read this first](#read-this-first)).
 3. Replace every value listed under `placeholders`, for example `<ip>`. Leaving a placeholder in returns nothing, and nothing looks like a clean result.
 4. Read the result against `outcomes`: what rows mean, what an empty result means (and when it isn't clean), and what an error usually means.
 5. Check `known_limits` before you treat a result as complete.
@@ -19,27 +19,23 @@ Huntress SIEM runs a restricted ES|QL. These rules come from testing against liv
 | Rule | Detail |
 |---|---|
 | Source is `from logs` | `FROM logs*` and `FROM logs-*` fail with "Not all query parsed". |
-| One UTC day per search | A search reads only the last UTC calendar day of the picker window, `stats` included. A 7 day picker is a 1 day search. Run longer hunts one day at a time. |
-| Never use `limit` | `limit` makes Huntress compute on a reduced slice of the data. A `stats` with `limit 200` counted 8,942 events where the real count was 82,013, and a raw search with `limit 20` returned 0 of 8 matching rows. The results grid already pages rows. |
+| Wide windows work | Huntress reads the whole picker window, newest first, in 4-hour steps. Tested complete up to 29 days (small source, about 7 minutes) and 14 days (226 million events, about 8.5 minutes). |
+| Never use `limit` | Any `limit` (10 or 200 alike, raw or `stats`) makes the search read only the **last 4 hours of the picker window**. A 3-day `stats` with `limit 200` counted 56 events where the real count was 431. If those last 4 hours are all in the future, the result is empty. The results grid already pages rows. |
 | `LIKE` uses `*` | `%` is a literal character, so `LIKE "%admin%"` matches nothing. Huntress's ES\|QL guide shows `%`; it's wrong. |
 | `==` is case sensitive | So are field names (`winlog.event_data.Ipaddress` and `IpAddress` are different fields). Use `TO_LOWER(field) == "value"` for exact case-insensitive matches and `CONTAINS(field, "text")` for case-insensitive partial matches. The same operation can appear with different casing, for example `UserLoggedIn` and `UserLoggedin`. |
 | `message` is a summary | It holds one line like "User successfully logged in." and never contains IPs, users or IDs. Don't search it for IOCs. Use `CONTAINS(event.original, "text")` to search the raw event. |
 | Watch `WHERE` after `STATS` | A `WHERE` after a `STATS` that includes `MIN(@timestamp)` or `MAX(@timestamp)` returns no rows. Filter on counts in a query without the timestamp aggregations. |
-| Wait for Done | Results stream in while the search runs ("Aggregating results..."). Read them once the grid says Done. |
+| Wait for Done | A `stats` search shows nothing until it's finished ("Aggregating results..." walks back through the window). A raw search shows the newest 100 rows first and loads older rows only as you scroll; scroll until the grid says Done before treating a short or empty result as complete. |
 | Headers aren't field names | The grid relabels some columns (for example `itdr.ClientIP` shows as `source.ip`) and always adds Organization. Take field names from a row's details. |
 | Missing fields count as null | `COUNT(field)` counts only rows where the field exists (Huntress's docs say missing fields read as empty values; testing showed otherwise). Empty strings still count. |
 | Functions confirmed | `TO_LOWER`, `CONTAINS`, `CIDR_MATCH`, `IN (...)`, `COUNT`, `count_distinct`, `MIN`, `MAX`, `SORT` after `STATS`. `TO_STRING` fails. Huntress documents `EVAL`, `DROP`, `RENAME` and `MV_EXPAND`; they're untested here. |
 
-**Picker settings for one UTC day** (the picker is in Eastern time):
+**About the time picker:**
 
-| Period | Start | End |
-|---|---|---|
-| EDT (March to November) | 20:00 the day before | 19:59 |
-| EST (November to March) | 19:00 the day before | 18:59 |
+- The picker shows your local time. A window ending in the future is fine; it returns what has arrived so far.
+- The picker doesn't filter on `@timestamp` alone. In testing, a one-day window held about 8,500 events whose `@timestamp` was the next day (host clocks or time zone settings). To filter on event time, add `@timestamp >= "2026-10-19T00:00:00Z"` style conditions; they compare as text, so exact boundaries can be off by a fraction of a second.
 
-A picker end time in the future returns nothing. For the current day, end the window at the current time.
-
-Retention is 30 days hot and 1 year cold by default. Huntress offers a 90 day hot / 7 year cold add-on.
+Huntress lists retention as 30 days hot and 1 year cold by default, with a 90 day hot / 7 year cold add-on.
 
 ## Field reference
 
@@ -55,16 +51,16 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Result | `itdr.LogonError`, `itdr.ErrorNumber`. `itdr.ResultStatus` reads Success even on failed sign-ins, so don't use it. |
 | Session and device | `session.id`, `itdr.DeviceProperties.OS`, `.BrowserType`, `.IsCompliant` (sign-in records only) |
 | Raw details | `itdr.ExtendedProperties.Value` holds result detail, user agent and request type as one comma-joined string. Device code sign-ins carry `Cmsi:Cmsi` here. |
-| Traps | Operation names end with a period (`Enable Strong Authentication.`); match them with `LIKE` or `TO_LOWER(...) LIKE`. Anonymous Microsoft Forms responses log IP `0.0.0.0`. App directory actions show `itdr.UserId` as `ServicePrincipal_<guid>`, the object ID, not the app ID. |
+| Traps | Some operation names end with a period (for example `Enable Strong Authentication.`, while `UserLoggedIn` has none); match those with `LIKE` or `TO_LOWER(...) LIKE`. Anonymous Microsoft Forms responses log IP `0.0.0.0`. App directory actions show `itdr.UserId` as `ServicePrincipal_<guid>`, the object ID, not the app ID. |
 
 ### Cisco Duo
 
 | Item | Detail |
 |---|---|
 | Provider | `Duo` |
-| Authentication records | `duo.email`, `duo.result` (`success`, `denied`, `fraud`), `duo.reason` (for example `user_approved`, `no_response`, `bypass_user`), `duo.factor` (for example `duo_push`, `verified_duo_push`, `sms_passcode`), `duo.application.name`, `duo.access_device.ip`, `duo.access_device.location.*` |
+| Authentication records | `duo.email`, `duo.result` (`success`, `denied`; Duo also documents `fraud`, not seen in testing), `duo.reason` (for example `user_approved`, `no_response`), `duo.factor` (for example `duo_push`, `verified_duo_push`, `sms_passcode`), `duo.application.name`, `duo.access_device.ip`, `duo.access_device.location.*` |
 | Telephony records | `duo.context`, `duo.phone`, `duo.type` (`sms`, `phone`) |
-| Traps | All values are lowercase. There's no `allow` result. A bypass code login is a `success` with reason `bypass_user`. |
+| Traps | All values are lowercase. There's no `allow` result. Duo documents bypass code logins as a `success` with reason `bypass_user` (not seen in testing). |
 
 ### FortiGate
 
@@ -81,7 +77,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 |---|---|
 | Provider | `Syslog-SonicWall` |
 | Common fields | `event.code` (equals the SonicWall message ID `sonicwall.m`), `sonicwall.msg`, `sonicwall.usr`, `sonicwall.sn` (serial), `sonicwall.src`, `sonicwall.dst`, `sonicwall.note`, `source.ip`, `host.ip` |
-| Traps | `host.hostname` is never populated; identify the firewall by `sonicwall.sn` or `host.ip`. `sonicwall.sess` doesn't exist under that name. Login and logout events only arrive when the firewall's syslog includes the Authentication Access category. |
+| Traps | `host.hostname` is never populated; identify the firewall by `sonicwall.sn` or `host.ip`. `sonicwall.sess` doesn't exist under that name. Login and logout codes didn't appear in four days of testing; SonicWall documents them under the Authentication Access category, so check that category is sent to syslog (untested). |
 
 ### Meraki MX
 

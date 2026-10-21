@@ -21,8 +21,11 @@ logsource:
   platform: Huntress SIEM
   provider: "Syslog-SonicWall"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
+  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
+  short or empty result as complete.
 placeholders: []
 query: >
   from logs
@@ -45,17 +48,18 @@ outcomes:
   rows: >
     Each row is a successful SSL-VPN login. Compare source IPs with the user's normal locations.
   empty: >
-    No matching events on this UTC day. Empty is not proof nothing happened: these events only
-    reach the SIEM when the firewall's syslog includes the Authentication Access log category,
-    and none were seen from any client across four test days.
+    No matching events in this window. Empty is not proof nothing happened: none of these codes
+    appeared from any client across four test days, and SonicWall documents them under the
+    Authentication Access log category, so check that category is sent to syslog.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. sonicwall.sess doesn't
-  exist under that name in Huntress, so that column stays blank. host.hostname is never
-  populated for SonicWall; use sonicwall.sn (serial) or host.ip to identify the firewall.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. sonicwall.sess doesn't exist under that name in Huntress, so that column
+  stays blank. host.hostname is never populated for SonicWall; use sonicwall.sn (serial) or
+  host.ip to identify the firewall.
 analyst_notes: |
   1080 = Successful SSL VPN User Login (Authentication Access)
   A login from an unexpected location can mean stolen credentials or an exposed VPN.
-  These events reach the SIEM only when the firewall's syslog includes the Authentication Access log category.
+  SonicWall documents these under the Authentication Access log category; check it is sent to syslog.
