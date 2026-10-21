@@ -1,11 +1,11 @@
 title: Account Logon Failed
-id: null
+id: cb67b8c6-ef55-4e3c-a529-8880b850c098
 status: Production
 description: >
   Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the event code is equal to 4625.
 author: tacticalbeard-dev
 date: 2025/07/14
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
   - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
@@ -16,12 +16,32 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Windows Event
-analyst_notes: >
-  Event ID 4625 - Account logon failed
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE 
       event.provider=="Microsoft-Windows-Security-Auditing" 
   | WHERE 
       event.code == 4625 
+expected_result: >
+  Tens of thousands of failed logons a day across a set of endpoints and servers.
+outcomes:
+  rows: >
+    Each row is a failed logon (4625). Look at the account, logon type and source; many accounts
+    failing from one source is password spraying.
+  empty: >
+    No failed logons on this UTC day, which would be unusual; check that Audit Logon (Failure)
+    is enabled and that Windows event logs are arriving.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  Event ID 4625 - Account logon failed

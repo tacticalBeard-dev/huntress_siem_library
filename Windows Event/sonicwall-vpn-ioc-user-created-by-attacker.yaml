@@ -1,11 +1,11 @@
 title: Sonicwall VPN IOC user created by attacker
-id: null
+id: 81e49585-cc78-439c-a953-39d01745f0ef
 status: Production
 description: >
   Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and user name IOC reported by Huntress blog.
 author: tacticalbeard-dev
 date: 2025/08/18
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
   - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
@@ -17,9 +17,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Windows Event
-analyst_notes: >
-  User accounts created by attacker posted on Huntress blog as IOCs.
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE 
@@ -28,3 +30,20 @@ query: >
       winlog.event_data.TargetUserName =="backupSQL"
       or
       winlog.event_data.TargetUserName =="lockadmin"
+expected_result: >
+  Nothing, unless one of the published attacker account names exists.
+outcomes:
+  rows: >
+    One of the attacker account names appears. Treat it as an incident.
+  empty: >
+    Neither account name appears on this UTC day. Names are matched exactly and case
+    sensitively.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  User accounts created by attacker posted on Huntress blog as IOCs.

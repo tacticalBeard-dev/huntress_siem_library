@@ -1,5 +1,5 @@
-title: OverPass-the-Hash — RC4 TGT Request
-id: null
+title: OverPass-the-Hash - RC4 TGT Request
+id: be155494-b21f-4860-854f-034437740a2f
 status: Production
 description: >
   Detects potential OverPass-the-Hash by identifying Kerberos TGT requests (Event 4768)
@@ -10,7 +10,7 @@ description: >
   rather than a domain controller.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1550/002/"
   - "https://learn.microsoft.com/en-us/windows-server/security/kerberos/detect-remediate-rc4-kerberos"
@@ -23,13 +23,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Windows Event
-analyst_notes: >
-  This fires on Domain Controllers only as Event 4768 is only logged on DCs. Status 0x0
-  means the TGT was successfully issued. Combine with 4624 Logon Type 9 (NewCredentials)
-  from the same source IP to confirm the attack chain. Requires Kerberos Authentication
-  Service auditing. Some legacy applications legitimately use RC4 so build a baseline of
-  known RC4 sources before alerting.
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -46,3 +44,25 @@ query: >
       winlog.event_data.TicketEncryptionType,
       winlog.event_data.PreAuthType,
       winlog.event_data.Status
+expected_result: >
+  Some RC4 TGTs on a normal day where legacy systems still use RC4.
+outcomes:
+  rows: >
+    Each row is a TGT issued with RC4. Baseline the known RC4 sources, then investigate new
+    ones.
+  empty: >
+    No RC4 TGTs on this UTC day. 4768 is only logged on domain controllers with Audit Kerberos
+    Authentication Service enabled, so empty is not clean without it.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  This fires on Domain Controllers only as Event 4768 is only logged on DCs. Status 0x0
+  means the TGT was successfully issued. Combine with 4624 Logon Type 9 (NewCredentials)
+  from the same source IP to confirm the attack chain. Requires Kerberos Authentication
+  Service auditing. Some legacy applications legitimately use RC4 so build a baseline of
+  known RC4 sources before alerting.

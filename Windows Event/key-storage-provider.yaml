@@ -1,11 +1,11 @@
 title: Key Storage Provider
-id: null
+id: 07c61d43-cf0e-4bd8-941f-334c8dfe4678
 status: Production
 description: >
   Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the provider name is equal to Microsoft Software Key Storage Provider.
 author: tacticalbeard-dev
 date: 2025/07/14
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
   - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
@@ -16,9 +16,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Windows Event
-analyst_notes: >
-  These logs will show key file and cryptographic operations.
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE 
@@ -32,3 +34,19 @@ query: >
       winlog.event_data.KeyType,
       winlog.event_data.Operation,
       message
+expected_result: >
+  Key file and cryptographic operations from the Microsoft Software Key Storage Provider.
+outcomes:
+  rows: >
+    Each row is a key operation with the user and key type.
+  empty: >
+    No key storage events on this UTC day.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  These logs will show key file and cryptographic operations.

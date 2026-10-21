@@ -1,5 +1,5 @@
 title: Scheduled Task Created
-id: null
+id: 9d82298b-5c7a-4b5c-af84-e8f8b91e1216
 status: Production
 description: >
   Detects creation of a new Windows scheduled task via Event 4698. Scheduled tasks are a
@@ -10,7 +10,7 @@ description: >
   including the command, arguments, and trigger.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1053/005/"
   - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4698"
@@ -23,13 +23,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Windows Event
-analyst_notes: >
-  The TaskContent field contains the full XML of the task. Look for actions referencing
-  cmd.exe, powershell.exe, wscript.exe, or mshta.exe combined with encoded arguments
-  (-enc, -e, or base64 strings). Tasks created by SYSTEM or by accounts that are not
-  dedicated software deployment accounts warrant immediate review. Requires Audit Other
-  Object Access Events to be enabled in audit policy.
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -41,3 +39,26 @@ query: >
       winlog.event_data.SubjectDomainName,
       winlog.event_data.TaskName,
       winlog.event_data.TaskContent
+expected_result: >
+  Tens of thousands of task creations a day across a set of hosts; software updaters create
+  many.
+outcomes:
+  rows: >
+    Each row is a new scheduled task. Look at TaskContent for actions calling cmd, powershell,
+    wscript or mshta with encoded arguments.
+  empty: >
+    No tasks were created on this UTC day. 4698 needs Audit Other Object Access Events enabled,
+    so empty is not clean without it.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  The TaskContent field contains the full XML of the task. Look for actions referencing
+  cmd.exe, powershell.exe, wscript.exe, or mshta.exe combined with encoded arguments
+  (-enc, -e, or base64 strings). Tasks created by SYSTEM or by accounts that are not
+  dedicated software deployment accounts warrant immediate review. Requires Audit Other
+  Object Access Events to be enabled in audit policy.
