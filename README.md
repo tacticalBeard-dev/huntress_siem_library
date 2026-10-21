@@ -83,15 +83,31 @@ The exact `event.provider` value for each source, the fields the queries use, an
 |---|---|
 | Provider | `Syslog-SonicWall` |
 | Common fields | `event.code` (equals the SonicWall message ID `sonicwall.m`), `sonicwall.msg`, `sonicwall.usr`, `sonicwall.sn` (serial), `sonicwall.src`, `sonicwall.dst`, `sonicwall.note`, `source.ip`, `host.ip` |
-| Traps | `host.hostname` is never populated; identify the firewall by `sonicwall.sn` or `host.ip`. `sonicwall.sess` doesn't exist under that name. SonicWall documents the login and logout codes under the Authentication Access category, so check that category is sent to syslog. |
+| Traps | `host.hostname` is never populated; identify the firewall by `sonicwall.sn` or `host.ip`. `sonicwall.sess` doesn't exist under that name. Message ID 200 is CLI administrator login denied. SonicWall documents the login and logout codes under the Authentication Access category, so check that category is sent to syslog. |
 
 ### Meraki MX
 
 | Item | Detail |
 |---|---|
 | Provider | `Syslog-Meraki` (MX syslog). The separate Meraki cloud API integration uses `MerakiCloud`. |
-| Common fields | `meraki.event_type` (the Meraki syslog category, for example `events`), `meraki.event_description` (for example `content_filtering_block`, `authentication`, `dhcp lease`), `host.hostname`, `host.ip` |
+| Common fields | `meraki.event_type` (the Meraki syslog category, for example `events`), `meraki.event_description` (for example `content_filtering_block`, `authentication`, `dhcp lease`), `host.hostname`, `host.ip`. Content filtering blocks add `meraki.category0`, `meraki.url`, `meraki.client_ip` and sometimes `user.name`. |
 | Traps | `security_event` (IDS and malware scan results) is only sent when the MX syslog server has the Security events role enabled. |
+
+### Palo Alto
+
+| Item | Detail |
+|---|---|
+| Provider | `Syslog-PaloAlto` |
+| Common fields | `event.code` (log type and subtype joined, for example `threat_url`, `threat_spyware`, `threat_file`, `system_general`), `event.action` (`alert`, `block-url`, `drop`, ...), `palo_alto.threat_id`, `palo_alto.threat_category`, `palo_alto.severity`, `palo_alto.category` (URL category), `palo_alto.url_filename` (the URL), `palo_alto.rule_name`, `palo_alto.device_name`, `palo_alto.direction`, `source.ip`, `destination.ip` |
+| Traps | Traffic logs only arrive if the log forwarding profile sends them. DNS-based spyware signatures put the domain inside `palo_alto.threat_id` (`generic:<domain>(<id>)`). |
+
+### WatchGuard
+
+| Item | Detail |
+|---|---|
+| Provider | `Syslog-XTM` |
+| Common fields | `event.code` (8-character hex message ID, text), `event.action` (`Allow`, `Deny`, `logon`, `logon-failed`, `connect`, `disconnect`), `user.name`, `source.ip`, `source.as.organization.name`, `xtm.auth_server`, `xtm.user_type`, `event.reason` |
+| Traps | Message IDs are text, so quote them (`event.code=="11000005"`). On some logon messages `xtm.user_type` holds the unparsed end of the message, including the Firebox serial. |
 
 ### SentinelOne
 
@@ -183,6 +199,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | [admin-wan-login.yaml](Sonicwall/admin-wan-login.yaml) | List admin WAN logins |
 | [all-attack-activity.yaml](Sonicwall/all-attack-activity.yaml) | List attacks the firewall dropped (scans, floods, spoofing) |
 | [all-logs-by-hostname.yaml](Sonicwall/all-logs-by-hostname.yaml) | Check SonicWall logs are arriving and see the fields |
+| [cli-admin-login-denied.yaml](Sonicwall/cli-admin-login-denied.yaml) | Rank sources of failed CLI admin logins (ID 200) |
 | [failed-logins.yaml](Sonicwall/failed-logins.yaml) | List failed logins |
 | [sonicwall-vpn-ioc-login-by-ip.yaml](Sonicwall/sonicwall-vpn-ioc-login-by-ip.yaml) | Sweep for published SonicWall VPN attacker IPs |
 | [successful-sslvpn-user-login.yaml](Sonicwall/successful-sslvpn-user-login.yaml) | List successful SSL-VPN logins |
@@ -196,7 +213,24 @@ The exact `event.provider` value for each source, the fields the queries use, an
 |---|---|
 | [Meraki: all-logs-by-hostname.yaml](Meraki/all-logs-by-hostname.yaml) | Check Meraki logs are arriving and see the fields |
 | [Meraki: all-security-alerts.yaml](Meraki/all-security-alerts.yaml) | List IDS and malware scan events |
+| [Meraki: content-filtering-blocks.yaml](Meraki/content-filtering-blocks.yaml) | Summarize content filtering blocks by category and client |
 | [SentinelOne: all-logs-by-event-provider.yaml](SentinelOne/all-logs-by-event-provider.yaml) | List SentinelOne alerts and threat activity |
+
+**Palo Alto**
+
+| Query | Use it to |
+|---|---|
+| [all-logs-by-hostname.yaml](Palo%20Alto/all-logs-by-hostname.yaml) | Check Palo Alto logs are arriving, by firewall and log type |
+| [threat-detections.yaml](Palo%20Alto/threat-detections.yaml) | Summarize medium and higher threat detections |
+| [url-filtering-blocks.yaml](Palo%20Alto/url-filtering-blocks.yaml) | Summarize URL filtering blocks by category |
+
+**WatchGuard**
+
+| Query | Use it to |
+|---|---|
+| [all-logs-by-hostname.yaml](WatchGuard/all-logs-by-hostname.yaml) | Check WatchGuard logs are arriving, by Firebox and message ID |
+| [failed-logons.yaml](WatchGuard/failed-logons.yaml) | Rank VPN and management logon failures |
+| [successful-logons.yaml](WatchGuard/successful-logons.yaml) | Summarize management and VPN logons by user and source |
 
 **Windows event logs**
 
@@ -244,7 +278,9 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Device code phishing | [oauth-device-code-flow-authentication.yaml](ITDR/oauth-device-code-flow-authentication.yaml) |
 | MFA fatigue | [mfa-push-fatigue-deny-then-allow.yaml](Cisco%20Duo/mfa-push-fatigue-deny-then-allow.yaml), [duo-authentication-failure-spike.yaml](Cisco%20Duo/duo-authentication-failure-spike.yaml) |
 | Password spraying or brute force | [entra-password-spray-by-ip.yaml](ITDR/entra-password-spray-by-ip.yaml), [entra-account-lockouts.yaml](ITDR/entra-account-lockouts.yaml), [entra-user-login-invalid-username-or-password.yaml](ITDR/entra-user-login-invalid-username-or-password.yaml), [ssl-vpn-auth-failure-spike.yaml](Fortigate/ssl-vpn-auth-failure-spike.yaml), [account-logon-failed.yaml](Windows%20Event/account-logon-failed.yaml) |
-| An exposed firewall admin interface | [admin-logins-on-any-interface.yaml](Fortigate/admin-logins-on-any-interface.yaml), [admin-login-from-external-ip.yaml](Fortigate/admin-login-from-external-ip.yaml), [admin-wan-login.yaml](Sonicwall/admin-wan-login.yaml) |
+| An exposed firewall admin interface | [admin-logins-on-any-interface.yaml](Fortigate/admin-logins-on-any-interface.yaml), [admin-login-from-external-ip.yaml](Fortigate/admin-login-from-external-ip.yaml), [admin-wan-login.yaml](Sonicwall/admin-wan-login.yaml), [cli-admin-login-denied.yaml](Sonicwall/cli-admin-login-denied.yaml), [successful-logons.yaml](WatchGuard/successful-logons.yaml) |
+| VPN brute force or credential stuffing | [ssl-vpn-auth-failure-spike.yaml](Fortigate/ssl-vpn-auth-failure-spike.yaml), [failed-logons.yaml](WatchGuard/failed-logons.yaml), [successful-logons.yaml](WatchGuard/successful-logons.yaml) |
+| A device reaching malicious sites | [threat-detections.yaml](Palo%20Alto/threat-detections.yaml), [url-filtering-blocks.yaml](Palo%20Alto/url-filtering-blocks.yaml), [content-filtering-blocks.yaml](Meraki/content-filtering-blocks.yaml) |
 | A firewall firmware change | [firmware-version-change.yaml](Fortigate/firmware-version-change.yaml) |
 | A new account or privilege change | [account-management-events.yaml](Windows%20Event/account-management-events.yaml), [privileged-group-membership-change.yaml](Windows%20Event/privileged-group-membership-change.yaml), [admin-password-reset.yaml](Windows%20Event/admin-password-reset.yaml) |
 | Persistence on a Windows host | [scheduled-task-creation.yaml](Windows%20Event/scheduled-task-creation.yaml), [registry-key-modification.yaml](Windows%20Event/registry-key-modification.yaml), [service-installed.yaml](Windows%20Event/service-installed.yaml) |
@@ -288,7 +324,7 @@ Queries use [MITRE ATT&CK](https://attack.mitre.org/) tags where a technique cle
 
 - Tactic: `attack.<tactic_name>`, for example `attack.credential_access`, `attack.persistence`
 - Technique: `attack.t<id>` or `attack.t<id>.<sub>`, for example `attack.t1078`, `attack.t1558.003`
-- Log source: one tag naming the data source, for example `windows.event`, `cisco.duo`, `fortigate`, `microsoft.entra.id`, `sonicwall`, `meraki`, `sentinelone`
+- Log source: one tag naming the data source, for example `windows.event`, `cisco.duo`, `fortigate`, `microsoft.entra.id`, `sonicwall`, `meraki`, `sentinelone`, `palo.alto`, `watchguard`
 
 Utility and starter queries that don't map to a technique carry only the log source tag.
 

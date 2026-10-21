@@ -1,0 +1,53 @@
+title: All Logs by Hostname
+id: f55a8d70-aab3-4ac1-868c-d72707390933
+status: Production
+description: >
+  Count Palo Alto firewall logs by firewall and log type. A quick check that logs are arriving,
+  and a list of the log types each firewall sends.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/32270678960531"
+  - "https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-admin/monitoring/use-syslog-for-monitoring/syslog-field-descriptions"
+tags:
+  - palo.alto
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-PaloAlto"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-PaloAlto"
+  | STATS
+      events = COUNT(*),
+      last_seen = MAX(@timestamp)
+      BY host.hostname, event.code
+  | SORT
+      events DESC
+expected_result: >
+  One row per firewall and log type (event.code such as threat_url, threat_spyware, threat_file,
+  system_general), with a count and the last time one arrived.
+outcomes:
+  rows: >
+    Palo Alto syslog is reaching the SIEM. A firewall whose last_seen is hours old has stopped
+    sending. Open a raw row to see the full set of palo_alto.* fields for building other
+    queries.
+  empty: >
+    No Palo Alto logs arrived in this window. Check the firewall's syslog server profile and log
+    forwarding profiles before treating anything as clean.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. event.code is the log type and subtype joined (threat_url, system_general).
+  Traffic logs are sent only if the log forwarding profile includes them.
+analyst_notes: >
+  Threat logs carry the detection in palo_alto.threat_id, .threat_category and .severity; URL
+  logs carry the URL in palo_alto.url_filename and the category in palo_alto.category.

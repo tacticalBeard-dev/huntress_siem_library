@@ -1,0 +1,60 @@
+title: Successful Logons
+id: 2df708af-cfca-487b-9584-29f88cd40975
+status: Production
+description: >
+  Summarize successful WatchGuard Firebox logons (management, SSL VPN and Mobile VPN) by user,
+  source IP and logon type. Used to spot admin logins from the internet and VPN logins from
+  unexpected places.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://www.watchguard.com/help/docs/help-center/en-US/Content/en-US/Fireware/logging/log_message_types_c.html"
+  - "https://attack.mitre.org/techniques/T1133/"
+  - "https://attack.mitre.org/techniques/T1078/"
+tags:
+  - attack.t1133
+  - attack.t1078
+  - attack.initial_access
+  - watchguard
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-XTM"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-XTM"
+      AND event.action=="logon"
+  | STATS
+      logons = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY user.name, source.ip, event.code, xtm.auth_server, xtm.user_type
+  | SORT
+      logons DESC
+expected_result: >
+  Rows most days, split between admin (management) logons and VPN users.
+outcomes:
+  rows: >
+    xtm.user_type shows the logon type: Admin or text containing msg=Management is a management
+    login, SSLVPN or msg=SSL VPN is an SSL VPN user, msg=Mobile VPN is Mobile VPN. A management
+    login from a public source.ip means the Web UI is reachable from the internet. A VPN login
+    from a hosting provider or a new country is the priority.
+  empty: >
+    No logons in this window. The Firebox must log authentication events to syslog.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. On some message IDs Huntress doesn't
+  split the message cleanly, so xtm.user_type holds the raw end of the message (including the
+  Firebox serial) instead of a clean type.
+analyst_notes: >
+  Logon message IDs: 11000004 (Admin or SSLVPN user type), 3E000002 (management or SSL VPN),
+  25000000 (Mobile VPN).

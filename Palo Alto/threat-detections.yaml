@@ -1,0 +1,64 @@
+title: Threat Detections
+id: 073ae84e-4e7d-43d7-b515-095c65315ad9
+status: Production
+description: >
+  Summarize Palo Alto spyware, virus, vulnerability and WildFire detections of medium severity
+  and above. These are the firewall's own threat signatures firing, the closest thing to an
+  alert in Palo Alto syslog.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-admin/monitoring/use-syslog-for-monitoring/syslog-field-descriptions/threat-log-fields"
+  - "https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-admin/threat-prevention"
+  - "https://support.huntress.io/hc/en-us/articles/32270678960531"
+tags:
+  - attack.t1071
+  - attack.command_and_control
+  - attack.initial_access
+  - palo.alto
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-PaloAlto"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-PaloAlto"
+      AND event.code IN ("threat_spyware", "threat_virus", "threat_vulnerability", "threat_wildfire-virus", "threat_file")
+      AND palo_alto.severity IN ("medium", "high", "critical")
+  | STATS
+      hits = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY palo_alto.threat_id, palo_alto.severity, event.code, event.action, host.hostname
+  | SORT
+      hits DESC
+expected_result: >
+  Usually a small number of medium hits, mostly spyware signatures that were dropped. High and
+  critical hits are rare.
+outcomes:
+  rows: >
+    palo_alto.threat_id names the signature; DNS-based spyware signatures read
+    generic:<domain>(<id>). An action of alert or allow means the traffic got through; drop,
+    reset or block means it was stopped. For anything that got through, or any high or critical
+    hit, rerun as a raw search on that threat_id and read source.ip, destination.ip and
+    palo_alto.direction to find the internal host.
+  empty: >
+    No medium or higher detections in this window. Threat logs need a security profile
+    (antivirus, anti-spyware, vulnerability protection) on the rules and a log forwarding
+    profile that sends threat logs.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. Low and informational detections are left
+  out on purpose because they're very noisy; remove the severity line to see them.
+analyst_notes: >
+  Spyware signatures cover command and control and DNS sinkhole hits, so a spyware detection
+  with action alert from an internal host is worth checking on the endpoint.

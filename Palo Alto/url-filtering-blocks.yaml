@@ -1,0 +1,59 @@
+title: URL Filtering Blocks
+id: 7dd63665-bc75-4f9e-bfe9-6d4f74974e24
+status: Production
+description: >
+  Summarize Palo Alto URL filtering blocks by URL category and firewall. Blocks in malware,
+  phishing or command and control categories point to an infected or targeted device.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-admin/monitoring/use-syslog-for-monitoring/syslog-field-descriptions/threat-log-fields"
+  - "https://docs.paloaltonetworks.com/advanced-url-filtering/administration/url-filtering-basics/url-categories"
+  - "https://support.huntress.io/hc/en-us/articles/32270678960531"
+tags:
+  - attack.t1071.001
+  - attack.command_and_control
+  - palo.alto
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-PaloAlto"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-PaloAlto"
+      AND event.code=="threat_url"
+      AND event.action IN ("block-url", "block-continue")
+  | STATS
+      blocks = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY palo_alto.category, event.action, host.hostname
+  | SORT
+      blocks DESC
+expected_result: >
+  Many blocks, nearly all in policy categories such as web-advertisements.
+outcomes:
+  rows: >
+    One row per URL category, action and firewall. Policy categories are normal. Look for
+    security categories (malware, phishing, high-risk, grayware, command-and-control, newly-
+    registered-domain) and drill in with a raw search on that palo_alto.category, keeping
+    source.ip and palo_alto.url_filename.
+  empty: >
+    No URL blocks in this window. The rules need a URL filtering profile with block actions, and
+    the log forwarding profile must send URL logs.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. block-continue means the user saw a warning page and could click through; a
+  later alert row for the same URL means they did. Allowed URLs (alert) are left out because of
+  their volume.
+analyst_notes: >
+  palo_alto.url_filename holds the URL and palo_alto.category the URL category.
