@@ -1,0 +1,60 @@
+title: Conditional Access Policy Changes
+id: 804f9980-250e-4ca8-b894-22524fdf3ffc
+status: Production
+description: >
+  List Conditional Access and other Entra policy changes. Attackers weaken or exclude themselves
+  from Conditional Access to skip MFA.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/entra/identity/conditional-access/troubleshoot-policy-changes-audit-log"
+  - "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-audit-activities"
+  - "https://attack.mitre.org/techniques/T1556/009/"
+tags:
+  - attack.t1556.009
+  - attack.defense_evasion
+  - attack.persistence
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation IN ("Add policy.", "Update policy.", "Delete policy.", "New-ConditionalAccessPolicy", "Set-ConditionalAccessPolicy", "Remove-ConditionalAccessPolicy")
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.Operation, itdr.UserId, itdr.ObjectId
+  | SORT
+      events DESC
+expected_result: >
+  Set-ConditionalAccessPolicy is frequent (mostly Microsoft service updates). Add policy.,
+  Update policy. and Delete policy. are much rarer.
+outcomes:
+  rows: >
+    itdr.ObjectId names the policy and itdr.UserId is who changed it. Focus on Update policy.
+    and Delete policy. by a person, especially a policy that enforces MFA. To see what changed,
+    run the same filter as a raw search and read itdr.ModifiedProperties.NewValue and .OldValue.
+  empty: >
+    No policy changes in this window.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Add policy., Update policy. and Delete policy. cover every Entra policy type
+  (Conditional Access, token lifetime, authorization policy), not only Conditional Access. The
+  *-ConditionalAccessPolicy operations are logged by Exchange Online and include Microsoft's own
+  sync activity.
+analyst_notes: >
+  A new exclusion (an account or a trusted location added to a policy) is the subtle version of
+  this attack and only shows in the ModifiedProperties values.

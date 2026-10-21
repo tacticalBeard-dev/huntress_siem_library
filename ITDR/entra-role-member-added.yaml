@@ -1,0 +1,59 @@
+title: ENTRA Role Member Added
+id: b9bc3087-9797-4dd3-82d4-ae08bfd9a75c
+status: Production
+description: >
+  List accounts added to an Entra ID directory role, for example Global Administrator. Attackers
+  add a controlled account to a privileged role to keep admin access.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-audit-activities"
+  - "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference"
+  - "https://attack.mitre.org/techniques/T1098/003/"
+tags:
+  - attack.t1098.003
+  - attack.persistence
+  - attack.privilege_escalation
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation=="Add member to role."
+  | KEEP
+      @timestamp,
+      itdr.UserId,
+      itdr.ObjectId,
+      itdr.Target.ID,
+      itdr.ModifiedProperties.Name,
+      itdr.ModifiedProperties.NewValue
+expected_result: >
+  A handful of rows; role changes are infrequent.
+outcomes:
+  rows: >
+    itdr.UserId is who made the change. itdr.ObjectId and itdr.Target.ID identify the account
+    added, and itdr.ModifiedProperties.NewValue names the role (look for Role.DisplayName). A
+    Global Administrator, Privileged Role Administrator, Exchange Administrator or Application
+    Administrator add that nobody requested is the priority.
+  empty: >
+    No role members were added in this window, which is common for a single tenant.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Eligible (PIM) assignments log under different operation names and aren't
+  included. The match is exact, including the trailing period.
+analyst_notes: >
+  Confirm the change with whoever owns the tenant. If it isn't expected, remove the role, reset
+  the added account and the actor's credentials, and revoke their sessions.

@@ -1,0 +1,65 @@
+title: ENTRA OAuth Consent and Permission Grants
+id: db6c60fd-8322-4a69-8dc2-3409bd8a3da3
+status: Production
+description: >
+  List apps being granted access through user or admin consent, delegated permission grants and
+  app role assignments. Illicit consent gives an attacker's app lasting access to mail and files
+  without a password.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-illicit-consent-grants"
+  - "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-audit-activities"
+  - "https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/app-perms-audit-logs"
+  - "https://attack.mitre.org/techniques/T1528/"
+tags:
+  - attack.t1528
+  - attack.credential_access
+  - attack.persistence
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation IN ("Consent to application.", "Add delegated permission grant.", "Add app role assignment to service principal.")
+  | KEEP
+      @timestamp,
+      itdr.Operation,
+      itdr.UserId,
+      itdr.ObjectId,
+      itdr.Target.ID,
+      itdr.ModifiedProperties.Name,
+      itdr.ModifiedProperties.NewValue
+expected_result: >
+  A steady trickle of rows, mostly Microsoft and well-known business apps.
+outcomes:
+  rows: >
+    itdr.UserId is who consented, itdr.Target.ID and itdr.ObjectId identify the app.
+    itdr.ModifiedProperties.NewValue lists the permissions (look for ConsentAction.Permissions
+    or DelegatedPermissionGrant.Scope). Flag apps you don't recognize that ask for Mail.Read,
+    Mail.Send, Files.ReadWrite.All, offline_access or any *.All scope, apps named after the
+    user, and consent by a regular user right after a suspicious sign-in.
+  empty: >
+    No consent or grants in this window. If the tenant blocks user consent, only admin consent
+    rows appear.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Consent rows don't carry the user's IP. Pivot on the actor's sign-ins around
+  the same time.
+analyst_notes: >
+  To remove an illicit app: revoke its permissions and delete the service principal in Entra ID,
+  then review what it accessed (MailItemsAccessed and FileDownloaded rows carrying the app's
+  ID). Microsoft's illicit consent playbook in the references walks through it.

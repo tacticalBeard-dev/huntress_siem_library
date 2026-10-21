@@ -1,0 +1,68 @@
+title: Mailbox Delegation Added
+id: ec16f0bb-7c51-4cd5-a334-1d4da6d37c95
+status: Production
+description: >
+  Find full access, send as and send on behalf permissions granted on a mailbox. Attackers grant
+  these to an account they control to keep reading or sending mail.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/powershell/module/exchange/add-mailboxpermission"
+  - "https://learn.microsoft.com/en-us/powershell/module/exchange/add-recipientpermission"
+  - "https://learn.microsoft.com/en-us/purview/audit-log-activities"
+  - "https://attack.mitre.org/techniques/T1098/002/"
+tags:
+  - attack.t1098.002
+  - attack.persistence
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND (
+        itdr.Operation IN ("Add-MailboxPermission", "Add-RecipientPermission", "Set-MailboxFolderPermission")
+        OR (itdr.Operation=="Set-Mailbox" AND CONTAINS(event.original, "GrantSendOnBehalfTo"))
+      )
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.Operation, itdr.UserId, itdr.ObjectId
+  | SORT
+      events DESC
+expected_result: >
+  One row per operation, actor and mailbox. Add-MailboxPermission is the most common, much of it
+  Microsoft and admin provisioning.
+outcomes:
+  rows: >
+    itdr.UserId is who granted the permission and itdr.ObjectId is the mailbox. Add-
+    MailboxPermission grants full access, Add-RecipientPermission grants send as, Set-Mailbox
+    with GrantSendOnBehalfTo grants send on behalf, and Set-MailboxFolderPermission shares a
+    single folder. Look for grants made by a regular user rather than an admin or service, or
+    grants to accounts outside the normal admin group. To see who received the permission, run
+    the same filter as a raw search and read itdr.Parameters.Name and itdr.Parameters.Value
+    (User or Trustee).
+  empty: >
+    No delegation was granted in this window. The Set-Mailbox branch depends on a text search of
+    the raw record.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Delegation through the Microsoft 365 admin center shows the admin's account
+  in itdr.UserId. Folder-level sharing done in Outlook can log as AddFolderPermissions or
+  ModifyFolderPermissions instead (not included; high volume).
+analyst_notes: >
+  Delegation is a quiet way to keep access after a password reset, because the attacker uses
+  their own account. After a hit, check the grantee's sign-ins and whether the grant came from
+  the same IP as a suspicious sign-in.

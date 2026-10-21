@@ -1,0 +1,58 @@
+title: ENTRA Account Lockouts
+id: ed54269c-961f-4a7c-ac1e-23993d159c0b
+status: Production
+description: >
+  Rank accounts and IPs by Entra smart lockout events (IdsLocked, error 50053). Lockouts mean
+  repeated failed passwords, often a spray or brute force.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/entra/identity/authentication/howto-password-smart-lockout"
+  - "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"
+  - "https://attack.mitre.org/techniques/T1110/"
+tags:
+  - attack.t1110
+  - attack.credential_access
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.LogonError=="IdsLocked"
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.UserId, itdr.ClientIP
+  | SORT
+      events DESC
+expected_result: >
+  Rows most days in a multi-tenant environment.
+outcomes:
+  rows: >
+    One row per account and source IP. Many accounts locked from one IP is a spray; one account
+    locked from many IPs is a targeted brute force. Check whether the IPs belong to the user's
+    normal locations, then look for a successful UserLoggedIn from the same IP afterwards.
+  empty: >
+    No smart lockouts in this window.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. In a wide window the list can fill, so
+  narrow the window if the last row still has a high count. Smart lockout counts failures per
+  location, so a user's own device can stay unlocked while an attacker's IP is locked. Lockout
+  records log as UserLoginFailed.
+analyst_notes: >
+  IdsLocked is error 50053. Run entra-password-spray-by-ip.yaml over the same window to see the
+  wrong-password failures that led up to it.

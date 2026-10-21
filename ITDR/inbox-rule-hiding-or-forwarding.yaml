@@ -1,0 +1,81 @@
+title: Inbox Rule That Hides, Deletes or Forwards Mail
+id: 76988605-b9dc-4543-b944-b794eb8ab07d
+status: Production
+description: >
+  Find new or changed inbox rules that forward mail, delete it, mark it read, or move it to a
+  folder people rarely open. These are the rule settings seen in business email compromise.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-outlook-rules-forms-attack"
+  - "https://attack.mitre.org/techniques/T1564/008/"
+  - "https://attack.mitre.org/techniques/T1114/003/"
+  - "https://learn.microsoft.com/en-us/powershell/module/exchange/new-inboxrule"
+tags:
+  - attack.t1564.008
+  - attack.t1114.003
+  - attack.defense_evasion
+  - attack.collection
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation IN ("New-InboxRule", "Set-InboxRule")
+  | WHERE
+      CONTAINS(event.original, "ForwardTo")
+      OR CONTAINS(event.original, "ForwardAsAttachmentTo")
+      OR CONTAINS(event.original, "RedirectTo")
+      OR CONTAINS(event.original, "DeleteMessage")
+      OR CONTAINS(event.original, "MarkAsRead")
+      OR CONTAINS(event.original, "RSS")
+      OR CONTAINS(event.original, "Conversation History")
+      OR CONTAINS(event.original, "Archive")
+      OR CONTAINS(event.original, "Deleted Items")
+      OR CONTAINS(event.original, "Junk")
+  | KEEP
+      @timestamp,
+      itdr.Operation,
+      itdr.UserId,
+      itdr.ObjectId,
+      itdr.ClientIP,
+      itdr.Parameters.Name,
+      itdr.Parameters.Value
+expected_result: >
+  Usually a small number of rows. Most are legitimate rules users make to file newsletters or
+  delete spam.
+outcomes:
+  rows: >
+    Read itdr.Parameters.Name and itdr.Parameters.Value together. The strongest signs are a
+    forward or redirect to an outside address, a move to RSS Feeds or Conversation History, a
+    rule that deletes mail containing words like invoice, payment or wire, and a rule name of
+    one character or punctuation. Check itdr.ClientIP against the user's normal sign-in IPs,
+    then pull the user's sign-ins around itdr.CreationTime.
+  empty: >
+    No rule in this window used any of these settings. Check inbox-rule-created-or-changed.yaml
+    for other rule changes; an attacker rule can also use a custom folder name that isn't listed
+    here.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The matches are text searches of the raw record (case-insensitive), so
+  Archive and Junk also match a rule that only mentions those words in its conditions. Rules
+  saved from the Outlook desktop client (UpdateInboxRules) aren't covered because they don't
+  carry the same parameters.
+analyst_notes: |
+  - ForwardTo, ForwardAsAttachmentTo, RedirectTo: mail leaves the mailbox. Forwarding outside the organization may also be blocked by the outbound spam policy, but the rule still shows the intent.
+  - MoveToFolder to RSS Feeds, RSS Subscriptions, Conversation History, Archive, Junk Email or Deleted Items: hides replies from the real user.
+  - DeleteMessage and MarkAsRead: hides messages outright.
+  - After a hit, check mailbox-forwarding-set.yaml for the same user and look for Send or SendAs activity from the same IP.

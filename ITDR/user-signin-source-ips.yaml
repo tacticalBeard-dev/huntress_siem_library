@@ -1,0 +1,57 @@
+title: User Sign-In Source IPs
+id: 8496a52b-e6a3-48eb-bc4f-678d689897a6
+status: Production
+description: >
+  List one user's successful sign-in IPs across a window, with counts and first and last time
+  seen. Used to confirm an admin action came from the user's normal location.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+  - "https://attack.mitre.org/techniques/T1078/004/"
+tags:
+  - attack.t1078.004
+  - attack.initial_access
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders:
+  - "<user@client.com>: the user's UPN in lowercase, for example user@example.com"
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND TO_LOWER(itdr.Operation)=="userloggedin"
+      AND TO_LOWER(itdr.UserId)=="<user@client.com>"
+  | STATS
+      sign_ins = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.ClientIP
+  | SORT
+      sign_ins DESC
+expected_result: >
+  A handful of IPs for most users: home, office, mobile carrier.
+outcomes:
+  rows: >
+    Most sign-ins from one or two IPs is normal. A hosting provider, VPN service or IOC address,
+    especially one first seen just before a sensitive change, is the priority. Run entra-user-
+    activity-by-actor-ip-address.yaml on any unfamiliar IP.
+  empty: >
+    No successful sign-ins for this user in the window. Check the UPN is lowercase and complete;
+    guest accounts use a #EXT# form.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Only sign-ins to Microsoft 365 workloads reach the unified audit log.
+analyst_notes: >
+  The query lowercases both sides, so it also catches the UserLoggedin casing variant of the
+  operation name.
