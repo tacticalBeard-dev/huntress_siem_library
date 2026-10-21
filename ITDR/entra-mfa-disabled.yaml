@@ -1,11 +1,11 @@
 title: ENTRA MFA Disabled
-id: null
+id: 40a4316c-8844-42f3-812c-f3ab470dc324
 status: Production
 description: >
   Find all logs where the event provider is equal to ITDR and the operation is Disable Strong Authentication.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
 tags:
@@ -16,18 +16,38 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: ITDR
-analyst_notes: >
-  This will identify when strong authentication has been disabled for an account which is not typically desirable.
-  At the very least this can indicate a misconfiguration or violation of standard policy.
-  Combined with other actions this can be a strong indicator of unwanted access.
+  provider: "ITDR"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
       event.provider=="ITDR"
-      AND itdr.Operation LIKE "Disable Strong Authentication*"
+      AND TO_LOWER(itdr.Operation) LIKE "disable strong authentication*"
   | KEEP
       itdr.Operation,
       itdr.UserId,
       itdr.UserType,
       itdr.ObjectId
+expected_result: >
+  Usually nothing. Disabling per-user MFA is rare; none was seen across five days of testing.
+outcomes:
+  rows: >
+    Each row is a per-user MFA disable. itdr.UserId is who made the change and itdr.ObjectId is
+    the account it was made on. Confirm it was an approved change.
+  empty: >
+    No per-user MFA was disabled on this UTC day. This only covers per-user MFA (Disable Strong
+    Authentication); MFA turned off through Conditional Access or security defaults shows up as
+    policy changes instead.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. The operation name
+  carries a trailing period in the audit log, so the query matches it as a lowercase prefix.
+analyst_notes: >
+  This will identify when strong authentication has been disabled for an account which is not typically desirable.
+  At the very least this can indicate a misconfiguration or violation of standard policy.
+  Combined with other actions this can be a strong indicator of unwanted access.

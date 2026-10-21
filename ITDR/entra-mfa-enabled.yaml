@@ -1,11 +1,11 @@
 title: ENTRA MFA Enabled
-id: null
+id: b3330a28-2b3b-4de8-a066-bdcb2e5f0855
 status: Production
 description: >
   Find all logs where the event provider is equal to ITDR and the operation is Enable Strong Authentication.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
 tags:
@@ -14,10 +14,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: ITDR
-analyst_notes: >
-  This will identify when strong authentication has been enabled.
-  Even though this would be considered a desirable action, if it occurs outside of traditional onboarding periods or activation campaigns it could highlight a process issue.
+  provider: "ITDR"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -28,3 +29,20 @@ query: >
       itdr.UserId,
       itdr.UserType,
       itdr.ObjectId
+expected_result: >
+  A handful of rows on a normal day, mostly during onboarding (3 rows across all tenants on the
+  test day).
+outcomes:
+  rows: >
+    Each row is a per-user MFA enable. itdr.ObjectId is the account it was enabled on.
+  empty: >
+    No per-user MFA was enabled on this UTC day, which is normal outside onboarding periods.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. The match is exact,
+  including the trailing period in "Enable Strong Authentication.".
+analyst_notes: >
+  This will identify when strong authentication has been enabled.
+  Even though this would be considered a desirable action, if it occurs outside of traditional onboarding periods or activation campaigns it could highlight a process issue.

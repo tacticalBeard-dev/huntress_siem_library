@@ -1,11 +1,11 @@
 title: ENTRA User Login Failures
-id: null
+id: 4c79045c-5036-4bbe-b051-e6385b78966c
 status: Production
 description: >
   Find all logs where the event provider is equal to ITDR and the operation is User Login Failed.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
   - "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"
@@ -16,17 +16,17 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: ITDR
-analyst_notes: >
-  A failed login by itself is not necessarily and indicator of compromise.
-  Excessive failed logins can indicate non-human attempts to access a resource.
-  When followed by a successful login from the same source IP and device this can present suspicious activity.
+  provider: "ITDR"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
       event.provider=="ITDR"
   | WHERE
-      itdr.Operation=="UserLoginFailed"
+      TO_LOWER(itdr.Operation)=="userloginfailed"
   | KEEP
       itdr.Operation,
       itdr.UserKey,
@@ -36,3 +36,25 @@ query: >
       itdr.DeviceProperties.BrowserType,
       itdr.DeviceProperties.IsCompliant,
       itdr.LogonError
+expected_result: >
+  Many rows on any normal day. Use itdr.LogonError to separate wrong passwords, lockouts
+  (IdsLocked) and MFA prompts.
+outcomes:
+  rows: >
+    Each row is a failed sign-in. Repeated failures for one account, or from one IP across many
+    accounts, are the patterns worth following up.
+  empty: >
+    No failed sign-ins on this UTC day, which is unusual for any tenant with users; check the
+    picker first.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Device fields
+  (itdr.DeviceProperties.*) are only populated on sign-in records, so they can be blank on other
+  rows. itdr.ResultStatus reads Success even on failed sign-ins, so judge the outcome by the
+  operation and itdr.LogonError, never ResultStatus.
+analyst_notes: >
+  A failed login by itself is not necessarily and indicator of compromise.
+  Excessive failed logins can indicate non-human attempts to access a resource.
+  When followed by a successful login from the same source IP and device this can present suspicious activity.

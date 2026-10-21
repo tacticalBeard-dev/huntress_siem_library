@@ -1,5 +1,5 @@
 title: OAuth Device Code Flow Authentication
-id: null
+id: 9fc0a04b-ef89-4bde-a515-b990082d4f02
 status: Production
 description: >
   Detects Microsoft 365 / Entra ID authentications using the OAuth 2.0 Device
@@ -11,7 +11,7 @@ description: >
   reviewed.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1528/"
   - "https://www.proofpoint.com/us/blog/threat-insight/access-granted-phishing-device-code-authorization-account-takeover"
@@ -23,17 +23,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: ITDR
-analyst_notes: >
-  In the unified audit log a device code sign-in carries the request type Cmsi:Cmsi (cross-machine
-  sign-in) inside itdr.ExtendedProperties.Value, on UserLoggedIn and UserLoginFailed records. There is
-  no separate device code operation or logon error. Check itdr.ApplicationId: well-known device code
-  clients include 04b07795-8ddb-461a-bbee-02f9e1bf7b46 (Azure CLI). Investigation steps when this fires:
-  check the client IP against your known user population, since attacker infrastructure commonly uses
-  residential proxy ranges. Look for a sign-in from a different IP for the same user shortly after the
-  device code event, as that is the attacker using the token. Check for inbox rule creation shortly
-  after the sign-in. Containment: disable the account and revoke all refresh tokens; a password reset
-  alone does not invalidate existing tokens.
+  provider: "ITDR"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -49,4 +43,30 @@ query: >
       itdr.ApplicationId,
       itdr.ClientIP,
       itdr.DeviceProperties.OS,
-      itdr.DeviceProperties.BrowserType
+      itdr.DeviceProperties.BrowserType,
+      itdr.ExtendedProperties.Value
+expected_result: >
+  A handful of rows on a normal day, if any (8 across all tenants on the test day).
+outcomes:
+  rows: >
+    Each row is a device code sign-in step. Review every one: check the app (itdr.ApplicationId)
+    and whether the user expected to sign in on another device.
+  empty: >
+    No device code sign-ins on this UTC day. This is common; device code flow is rare in most
+    businesses.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Matching relies on the
+  Cmsi:Cmsi request type in itdr.ExtendedProperties.Value; no separate device code operation or
+  error was found in testing, but that was checked on a single day.
+analyst_notes: >
+  A device code sign-in carries the request type Cmsi:Cmsi (cross-machine sign-in) inside
+  itdr.ExtendedProperties.Value, on UserLoggedIn and UserLoginFailed records. Well-known device
+  code clients include 04b07795-8ddb-461a-bbee-02f9e1bf7b46 (Azure CLI). Investigation steps:
+  check the client IP against your known user population, since attacker infrastructure commonly
+  uses residential proxy ranges. Look for a sign-in from a different IP for the same user
+  shortly after the device code event, as that is the attacker using the token. Check for inbox
+  rule creation shortly after the sign-in. Containment: disable the account and revoke all
+  refresh tokens; a password reset alone does not invalidate existing tokens.
