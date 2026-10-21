@@ -1,0 +1,56 @@
+title: Login Failures
+id: 24f7a2a0-0533-4d91-8a14-1bd3475940d0
+status: Production
+description: >
+  Rank Google Workspace login failures by user, source IP and network owner. Repeated failures
+  from one IP or hosting provider point to password guessing.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://developers.google.com/workspace/admin/reports/v1/appendix/activity/login"
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+  - "https://attack.mitre.org/techniques/T1110/"
+tags:
+  - attack.t1110
+  - attack.credential_access
+  - google.workspace
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR-GWS"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR-GWS"
+      AND event.action=="login_failure"
+  | STATS
+      failures = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY user.email, source.ip, source.as.organization.name
+  | SORT
+      failures DESC
+expected_result: >
+  A handful of failures per user per week is normal.
+outcomes:
+  rows: >
+    One row per user, source IP and network owner. Many users failing from one IP is a spray;
+    failures from a hosting provider or VPN service for a user who normally signs in from an
+    office or home ISP are the priority. Check for a login_success from the same IP afterwards.
+  empty: >
+    No Google Workspace login failures in this window.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Google records why it failed in google.events.parameters
+  (login_failure_type); this query doesn't split by it.
+analyst_notes: >
+  Google's own risk detections show up as account_warning / suspicious_login; see account-
+  security-changes.yaml.

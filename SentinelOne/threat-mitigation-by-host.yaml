@@ -1,0 +1,69 @@
+title: Threat Mitigation by Host
+id: caf0cebd-b552-41f5-bdfa-2f6144654820
+status: Production
+description: >
+  Summarize SentinelOne new threats, kills, quarantines and failed quarantines per host. A host
+  with a failed quarantine, or new threats and no mitigation, still has the threat.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/41838176250259"
+  - "https://attack.mitre.org/tactics/TA0002/"
+tags:
+  - sentinelone
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-SentinelOne"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SentinelOne"
+      AND event.code IN (19, 2001, 2004, 2009)
+  | EVAL
+      is_new = CASE(event.code==19, 1, 0),
+      is_kill = CASE(event.code==2001, 1, 0),
+      is_quarantine = CASE(event.code==2004, 1, 0),
+      is_quarantine_failed = CASE(event.code==2009, 1, 0)
+  | STATS
+      new_threats = SUM(is_new),
+      kills = SUM(is_kill),
+      quarantines = SUM(is_quarantine),
+      quarantine_failures = SUM(is_quarantine_failed),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY sentinelone.deviceHostName
+  | SORT
+      quarantine_failures DESC
+expected_result: >
+  One row per host that had threat activity, failed quarantines first.
+outcomes:
+  rows: >
+    Any quarantine_failures above 0 means the file is still on the host: open the threat in
+    SentinelOne and remediate manually. A host with new_threats but no kills or quarantines may
+    be in detect-only policy. Pivot with a raw search on the host (event.provider=="Syslog-
+    SentinelOne" AND sentinelone.deviceHostName=="<host>") and keep file.path, file.hash.sha256
+    and process.command_line.
+  empty: >
+    No threat activity in this window. Huntress ingests SentinelOne alerts and threat events
+    only, not endpoint telemetry, so an empty result just means no threats fired.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. host.hostname is blank on SentinelOne rows; the endpoint name is in
+  sentinelone.deviceHostName. The counts are per event, not per threat, so one threat with
+  several retries counts more than once. Mitigation done in the SentinelOne console logs under
+  other codes (analyst verdict 2030, status change 4008).
+analyst_notes: |
+  - 19: new active threat.
+  - 2001: kill performed successfully.
+  - 2004: quarantine performed successfully.
+  - 2009: quarantine failed.
+  EVAL and CASE are used here to count each code side by side; keep each CASE to a single condition, because Huntress rejects AND inside CASE.

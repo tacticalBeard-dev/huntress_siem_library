@@ -1,0 +1,59 @@
+title: Bypass Code Authentication
+id: 7e1a0900-31cd-4608-b603-97415563420f
+status: Production
+description: >
+  List Duo authentications that succeeded with a bypass code instead of a second factor. Bypass
+  codes are handed out by help desks, and attackers who talk their way into one skip MFA
+  entirely.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://duo.com/docs/adminapi#authentication-logs"
+  - "https://support.huntress.io/hc/en-us/articles/36516946793107"
+  - "https://attack.mitre.org/techniques/T1556/006/"
+tags:
+  - attack.t1556.006
+  - attack.credential_access
+  - attack.defense_evasion
+  - cisco.duo
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Duo"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Duo"
+      AND duo.reason=="bypass_user"
+  | STATS
+      authentications = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY duo.email, duo.access_device.ip, duo.application.name
+  | SORT
+      authentications DESC
+expected_result: >
+  A few rows, from users who were given a bypass code.
+outcomes:
+  rows: >
+    One row per user, source IP and application. Confirm with the help desk that a bypass code
+    was issued for that user. A bypass used from an IP the user hasn't used before, or for an
+    admin or VPN application, is the priority. Bypass codes can be reused until they expire, so
+    many rows for one user can mean a code was never revoked.
+  empty: >
+    No bypass codes were used in this window.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Duo logs bypass use as result success with reason bypass_user and an empty
+  factor. Users set to bypass status (no MFA at all) log the same reason.
+analyst_notes: >
+  In the Duo admin panel, bypass codes are listed per user. Revoke unused ones after the user's
+  phone is replaced, and check that bypass status isn't set on whole groups.

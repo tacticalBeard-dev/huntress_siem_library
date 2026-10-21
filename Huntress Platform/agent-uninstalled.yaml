@@ -1,0 +1,57 @@
+title: Agent Uninstalled
+id: 24f3ed4c-4cf4-4eef-988b-7bce5d33e08d
+status: Production
+description: >
+  List Huntress agents uninstalled from the Huntress portal, with who did it and from where. An
+  attacker with portal access, or an insider, can remove protection before acting.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/19223729361939"
+  - "https://attack.mitre.org/techniques/T1562/001/"
+tags:
+  - attack.t1562.001
+  - attack.defense_evasion
+  - huntress.platform
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Huntress Platform"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Huntress Platform"
+      AND event.action=="agent-uninstall"
+  | KEEP
+      @timestamp,
+      client.user.email,
+      client.ip,
+      account.name,
+      event.details.agent_hostnames,
+      event.outcome
+expected_result: >
+  A few rows from decommissioned and reimaged machines.
+outcomes:
+  rows: >
+    event.details.agent_hostnames lists the hosts uninstalled. Confirm each batch with whoever
+    owns the machines. Uninstalls by a portal user who doesn't normally manage agents, from an
+    unfamiliar client.ip, or of servers and domain controllers are the priority.
+  empty: >
+    No agents were uninstalled from the portal in this window. Agents removed locally on the
+    host don't log here.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Raw results load 100 rows at a time; scroll until Done. Only uninstalls
+  started from the Huntress portal are logged.
+analyst_notes: >
+  Pair with all-activity-by-action.yaml to see what else the same portal user did around the
+  same time.
