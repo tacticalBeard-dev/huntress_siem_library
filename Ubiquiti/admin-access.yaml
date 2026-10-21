@@ -1,0 +1,60 @@
+title: Admin Access
+id: 74b9b6ba-4c69-49b1-b00f-94ea01f38a95
+status: Production
+description: >
+  List admin sign-ins to UniFi consoles and the Network application (event 1000, Admin Accessed
+  UniFi OS, and 544, Network Accessed). Unexpected admin access to the network controller can
+  mean stolen credentials or an exposed console.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/32270678960531"
+  - "https://attack.mitre.org/techniques/T1078/"
+tags:
+  - attack.t1078
+  - attack.initial_access
+  - ubiquiti
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Ubiquiti"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Ubiquiti"
+      AND event.code IN ("1000", "544")
+  | KEEP
+      @timestamp,
+      host.hostname,
+      event.name,
+      unifi_os.UNIFIadmin,
+      unifi_os.UNIFIaccessMethod,
+      unifi_network.UNIFIadmin,
+      unifi_network.UNIFIaccessMethod,
+      source.ip,
+      source.as.organization.name
+expected_result: >
+  A few rows; admin sign-ins are infrequent.
+outcomes:
+  rows: >
+    The admin name is in unifi_os.UNIFIadmin for console sign-ins and unifi_network.UNIFIadmin
+    for Network application access. Check the admin is expected, the access method (local,
+    remote or cloud) fits how your team works, and source.ip and its network owner look right.
+  empty: >
+    No admin access in this window. The console must send audit events to the SIEM server.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Console sign-ins (1000) don't carry a source IP. Remote access through the
+  UniFi cloud can show a Ubiquiti address rather than the admin's own.
+analyst_notes: >
+  Event 544 is in the Audit category. Pair a surprising sign-in with firewall-blocks.yaml and
+  the gateway's configuration change history in UniFi.

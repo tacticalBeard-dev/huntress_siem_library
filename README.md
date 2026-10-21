@@ -125,6 +125,14 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Common fields | `event.action` (for example `agent-uninstall`, `account-accessed`, `remediations-approved`, `account-invitation-create`), `event.outcome`, `client.user.email`, `client.user.role`, `client.ip`, `client.as.organization.name`, `account.name`, `event.details.agent_hostnames`, `user_agent.original` |
 | Traps | These are actions taken in the Huntress console, not on endpoints. |
 
+### Ubiquiti UniFi
+
+| Item | Detail |
+|---|---|
+| Provider | `Syslog-Ubiquiti` |
+| Common fields | `event.code` (UniFi event ID as text, or `traffic` for flow logs), `event.name` (for example `Blocked by Firewall`, `Admin Accessed UniFi OS`, `Network Accessed`), `host.hostname`, `unifi_network.UNIFIcategory`, `unifi_network.UNIFIpolicyName`, `unifi_network.UNIFIrisk`, `unifi_network.UNIFIsrcClientIp`, `unifi_network.UNIFIadmin`, `unifi_os.UNIFIadmin`, `source.ip` |
+| Traps | Fields are split by UniFi application (`unifi_network.*`, `unifi_os.*`, `unifi_protect.*`). Event codes are text, so quote them (`event.code=="203"`). |
+
 ### SentinelOne
 
 | Item | Detail |
@@ -265,6 +273,14 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | [agent-uninstalled.yaml](Huntress%20Platform/agent-uninstalled.yaml) | List agents uninstalled from the Huntress portal, and by whom |
 | [all-activity-by-action.yaml](Huntress%20Platform/all-activity-by-action.yaml) | Count Huntress portal actions by user |
 
+**Ubiquiti**
+
+| Query | Use it to |
+|---|---|
+| [admin-access.yaml](Ubiquiti/admin-access.yaml) | List admin sign-ins to UniFi consoles and the Network app |
+| [all-logs-by-hostname.yaml](Ubiquiti/all-logs-by-hostname.yaml) | Check UniFi logs are arriving and see the event types |
+| [firewall-blocks.yaml](Ubiquiti/firewall-blocks.yaml) | Summarize gateway firewall blocks by policy and client |
+
 **Windows event logs**
 
 | Query | Use it to |
@@ -324,6 +340,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | An endpoint threat that wasn't cleaned up | [threat-mitigation-by-host.yaml](SentinelOne/threat-mitigation-by-host.yaml) |
 | A Google Workspace account takeover | [login-failures.yaml](Google%20Workspace/login-failures.yaml), [account-security-changes.yaml](Google%20Workspace/account-security-changes.yaml) |
 | Misuse of the Huntress portal | [agent-uninstalled.yaml](Huntress%20Platform/agent-uninstalled.yaml), [all-activity-by-action.yaml](Huntress%20Platform/all-activity-by-action.yaml) |
+| Unexpected access to network gear | [admin-access.yaml](Ubiquiti/admin-access.yaml), [firewall-blocks.yaml](Ubiquiti/firewall-blocks.yaml) |
 | Kerberos or NTLM credential abuse | [kerberoasting-rc4-service-ticket-request.yaml](Windows%20Event/kerberoasting-rc4-service-ticket-request.yaml), [overpass-the-hash-rc4-tgt-request.yaml](Windows%20Event/overpass-the-hash-rc4-tgt-request.yaml), [pass-the-hash-ntlm-network-logon-zero-key.yaml](Windows%20Event/pass-the-hash-ntlm-network-logon-zero-key.yaml) |
 | An IOC sweep | [entra-user-activity-by-actor-ip-address.yaml](ITDR/entra-user-activity-by-actor-ip-address.yaml), [sonicwall-vpn-ioc-login-by-ip.yaml](Sonicwall/sonicwall-vpn-ioc-login-by-ip.yaml) |
 | The ConnectWise Cloud Backup (SkyKick) compromise, October 2026 | [connectwise-cloud-backup-ioc-ip-sweep.yaml](ITDR/connectwise-cloud-backup-ioc-ip-sweep.yaml), [connectwise-cloud-backup-ioc-ip-detail.yaml](ITDR/connectwise-cloud-backup-ioc-ip-detail.yaml), [connectwise-cloud-backup-app-id-sweep.yaml](ITDR/connectwise-cloud-backup-app-id-sweep.yaml), [connectwise-skykick-app-name-search.yaml](ITDR/connectwise-skykick-app-name-search.yaml), then [entra-persistence-operation-inventory.yaml](ITDR/entra-persistence-operation-inventory.yaml) |
@@ -361,7 +378,7 @@ Queries use [MITRE ATT&CK](https://attack.mitre.org/) tags where a technique cle
 
 - Tactic: `attack.<tactic_name>`, for example `attack.credential_access`, `attack.persistence`
 - Technique: `attack.t<id>` or `attack.t<id>.<sub>`, for example `attack.t1078`, `attack.t1558.003`
-- Log source: one tag naming the data source, for example `windows.event`, `cisco.duo`, `fortigate`, `microsoft.entra.id`, `sonicwall`, `meraki`, `sentinelone`, `palo.alto`, `watchguard`, `google.workspace`, `huntress.platform`
+- Log source: one tag naming the data source, for example `windows.event`, `cisco.duo`, `fortigate`, `microsoft.entra.id`, `sonicwall`, `meraki`, `sentinelone`, `palo.alto`, `watchguard`, `google.workspace`, `huntress.platform`, `ubiquiti`
 
 Utility and starter queries that don't map to a technique carry only the log source tag.
 
