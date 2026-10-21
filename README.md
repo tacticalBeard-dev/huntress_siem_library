@@ -19,8 +19,8 @@ Huntress SIEM runs a restricted ES|QL. These rules come from testing against liv
 | Rule | Detail |
 |---|---|
 | Source is `from logs` | `FROM logs*` and `FROM logs-*` fail with "Not all query parsed". |
-| Wide windows work | Huntress reads the whole picker window, newest first, in 4-hour steps. Tested complete up to 29 days (small source, about 7 minutes) and 14 days (226 million events, about 8.5 minutes). |
-| Never use `limit` | Any `limit` (10 or 200 alike, raw or `stats`) makes the search read only the **last 4 hours of the picker window**. A 3-day `stats` with `limit 200` counted 56 events where the real count was 431. If those last 4 hours are all in the future, the result is empty. The results grid already pages rows. |
+| Wide windows work | Huntress reads the whole picker window, newest first, in 4-hour steps. Wide windows are complete; they just take longer. |
+| Never use `limit` | Any `limit` (10 or 200 alike, raw or `stats`) makes the search read only the **last 4 hours of the picker window**. If those last 4 hours are all in the future, the result is empty. The results grid already pages rows. |
 | `LIKE` uses `*` | `%` is a literal character, so `LIKE "%admin%"` matches nothing. Huntress's ES\|QL guide shows `%`; it's wrong. |
 | `==` is case sensitive | So are field names (`winlog.event_data.Ipaddress` and `IpAddress` are different fields). Use `TO_LOWER(field) == "value"` for exact case-insensitive matches and `CONTAINS(field, "text")` for case-insensitive partial matches. The same operation can appear with different casing, for example `UserLoggedIn` and `UserLoggedin`. |
 | `message` is a summary | It holds one line like "User successfully logged in." and never contains IPs, users or IDs. Don't search it for IOCs. Use `CONTAINS(event.original, "text")` to search the raw event. |
@@ -28,12 +28,12 @@ Huntress SIEM runs a restricted ES|QL. These rules come from testing against liv
 | Wait for Done | A `stats` search shows nothing until it's finished ("Aggregating results..." walks back through the window). A raw search shows the newest 100 rows first and loads older rows only as you scroll; scroll until the grid says Done before treating a short or empty result as complete. |
 | Headers aren't field names | The grid relabels some columns (for example `itdr.ClientIP` shows as `source.ip`) and always adds Organization. Take field names from a row's details. |
 | Missing fields count as null | `COUNT(field)` counts only rows where the field exists (Huntress's docs say missing fields read as empty values; testing showed otherwise). Empty strings still count. |
-| Functions confirmed | `TO_LOWER`, `CONTAINS`, `CIDR_MATCH`, `IN (...)`, `COUNT`, `count_distinct`, `MIN`, `MAX`, `SORT` after `STATS`. `TO_STRING` fails. Huntress documents `EVAL`, `DROP`, `RENAME` and `MV_EXPAND`; they're untested here. |
+| Functions confirmed | `TO_LOWER`, `CONTAINS`, `CIDR_MATCH`, `IN (...)`, `COUNT`, `count_distinct`, `MIN`, `MAX`, `SORT` after `STATS`. `TO_STRING` fails. Huntress also documents `EVAL`, `DROP`, `RENAME` and `MV_EXPAND`; the queries here don't use them. |
 
 **About the time picker:**
 
 - The picker shows your local time. A window ending in the future is fine; it returns what has arrived so far.
-- The picker doesn't filter on `@timestamp` alone. In testing, a one-day window held about 8,500 events whose `@timestamp` was the next day (host clocks or time zone settings). To filter on event time, add `@timestamp >= "2026-10-19T00:00:00Z"` style conditions; they compare as text, so exact boundaries can be off by a fraction of a second.
+- The picker doesn't filter on `@timestamp` alone. A one-day window can hold events whose `@timestamp` falls on the next day (host clocks or time zone settings). To filter on event time, add `@timestamp >= "2026-10-19T00:00:00Z"` style conditions; they compare as text, so exact boundaries can be off by a fraction of a second.
 
 Huntress lists retention as 30 days hot and 1 year cold by default, with a 90 day hot / 7 year cold add-on.
 
@@ -58,9 +58,9 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Item | Detail |
 |---|---|
 | Provider | `Duo` |
-| Authentication records | `duo.email`, `duo.result` (`success`, `denied`; Duo also documents `fraud`, not seen in testing), `duo.reason` (for example `user_approved`, `no_response`), `duo.factor` (for example `duo_push`, `verified_duo_push`, `sms_passcode`), `duo.application.name`, `duo.access_device.ip`, `duo.access_device.location.*` |
+| Authentication records | `duo.email`, `duo.result` (`success`, `denied`, `fraud`), `duo.reason` (for example `user_approved`, `no_response`), `duo.factor` (for example `duo_push`, `verified_duo_push`, `sms_passcode`), `duo.application.name`, `duo.access_device.ip`, `duo.access_device.location.*` |
 | Telephony records | `duo.context`, `duo.phone`, `duo.type` (`sms`, `phone`) |
-| Traps | All values are lowercase. There's no `allow` result. Duo documents bypass code logins as a `success` with reason `bypass_user` (not seen in testing). |
+| Traps | All values are lowercase. There's no `allow` result. Bypass code logins are a `success` with reason `bypass_user`. |
 
 ### FortiGate
 
@@ -77,7 +77,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 |---|---|
 | Provider | `Syslog-SonicWall` |
 | Common fields | `event.code` (equals the SonicWall message ID `sonicwall.m`), `sonicwall.msg`, `sonicwall.usr`, `sonicwall.sn` (serial), `sonicwall.src`, `sonicwall.dst`, `sonicwall.note`, `source.ip`, `host.ip` |
-| Traps | `host.hostname` is never populated; identify the firewall by `sonicwall.sn` or `host.ip`. `sonicwall.sess` doesn't exist under that name. Login and logout codes didn't appear in four days of testing; SonicWall documents them under the Authentication Access category, so check that category is sent to syslog (untested). |
+| Traps | `host.hostname` is never populated; identify the firewall by `sonicwall.sn` or `host.ip`. `sonicwall.sess` doesn't exist under that name. SonicWall documents the login and logout codes under the Authentication Access category, so check that category is sent to syslog. |
 
 ### Meraki MX
 
