@@ -1,0 +1,61 @@
+title: Content Filtering Blocks
+id: 72879202-3818-4822-adfd-1e9b338f387e
+status: Production
+description: >
+  Summarize Meraki MX content filtering blocks by category and client. Blocks in categories like
+  malware, phishing or botnets point to an infected or targeted device.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/38958950569107"
+  - "https://documentation.meraki.com/MX/Content_Filtering_and_Threat_Protection/Content_Filtering"
+  - "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/Syslog_Event_Types_and_Log_Samples"
+tags:
+  - attack.t1071.001
+  - attack.command_and_control
+  - meraki
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Meraki"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Meraki"
+      AND meraki.event_description=="content_filtering_block"
+  | STATS
+      blocks = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY meraki.category0, meraki.client_ip, host.hostname
+  | SORT
+      blocks DESC
+expected_result: >
+  Many blocks in most networks, nearly all in policy categories.
+outcomes:
+  rows: >
+    One row per category, client IP and MX appliance (host.hostname). Policy categories are
+    normal. Look for security categories such as Malicious Sites, phishing, spyware and botnets,
+    and clients hitting them repeatedly. Personal VPN and Encrypted DNS blocks can mean someone
+    is trying to get around the filter; a client with steady blocks every few minutes may be
+    beaconing. To see the URLs, rerun as a raw search with AND meraki.client_ip=="<ip>" and KEEP
+    meraki.url, meraki.category0.
+  empty: >
+    No content filtering blocks in this window. Content filtering must be enabled on the MX and
+    the Event log role (or URLs role) sent to syslog.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. Narrow the window if the list is full.
+  meraki.client_ip is the internal address behind the MX; map it to a device with DHCP or ARP
+  data. Category names come from Meraki's category list and can change.
+analyst_notes: >
+  meraki.category0 holds the category that caused the block. meraki.url holds the blocked URL,
+  and user.name is present only when Meraki can identify the user.

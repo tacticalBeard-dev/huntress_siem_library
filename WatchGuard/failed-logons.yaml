@@ -1,0 +1,60 @@
+title: Failed Logons
+id: 3078b771-76aa-4bb2-ab2c-97d8e3378931
+status: Production
+description: >
+  Rank WatchGuard Firebox authentication failures by user and source IP. A burst of failures
+  from one IP is a brute force or credential stuffing attempt against the VPN or management
+  login.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://www.watchguard.com/help/docs/help-center/en-US/Content/en-US/Fireware/logging/log_message_types_c.html"
+  - "https://attack.mitre.org/techniques/T1110/"
+  - "https://attack.mitre.org/techniques/T1133/"
+tags:
+  - attack.t1110
+  - attack.t1133
+  - attack.credential_access
+  - watchguard
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-XTM"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-XTM"
+      AND event.action=="logon-failed"
+  | STATS
+      failures = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY user.name, source.ip, xtm.auth_server, event.reason
+  | SORT
+      failures DESC
+expected_result: >
+  A handful of failures, usually VPN users rejected by RADIUS.
+outcomes:
+  rows: >
+    One row per user, source IP, authentication server and reason. Many users failing from one
+    IP is a spray; one user failing from many IPs is a stale password or a targeted guess. Check
+    source.as.organization.name in a raw row for hosting providers, then look for a successful
+    logon from the same IP in successful-logons.yaml.
+  empty: >
+    No failed logons in this window. The Firebox must log authentication events to syslog.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. event.reason holds the failure text from the Firebox, for example a RADIUS
+  Access-Reject. Failures that the RADIUS server rejects before the Firebox logs them won't
+  appear here.
+analyst_notes: >
+  Message ID 11000005 is the logon failure. WatchGuard SSL VPN and Mobile VPN portals are common
+  targets for credential stuffing.

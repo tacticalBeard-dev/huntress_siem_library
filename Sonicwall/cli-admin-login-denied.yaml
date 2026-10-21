@@ -1,0 +1,62 @@
+title: CLI Admin Login Denied
+id: 51b7bd97-cbf7-4b00-b148-4fda63b34ef4
+status: Production
+description: >
+  Rank source IPs by failed SonicWall command line (SSH or console) admin logins, message ID
+  200. Repeated failures from outside mean the management interface is exposed and someone is
+  guessing passwords.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/33940022013843"
+  - "https://www.sonicwall.com/techdocs/pdf/sonicos-6-5-1-log-events-reference-guide.pdf"
+  - "https://attack.mitre.org/techniques/T1110/"
+tags:
+  - attack.t1110
+  - attack.credential_access
+  - sonicwall
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-SonicWall"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SonicWall"
+      AND event.code==200
+  | STATS
+      attempts = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY source.ip, sonicwall.usr, sonicwall.sn
+  | SORT
+      attempts DESC
+expected_result: >
+  Rows only where SSH or console management is reachable. Automated guessing usually shows as
+  one source IP and one username with a high count.
+outcomes:
+  rows: >
+    One row per source IP, username tried and firewall serial (sonicwall.sn). Public source IPs
+    mean SSH or console management is reachable from the internet; restrict it to a management
+    network or VPN. Usernames like admin, root or test are scanning. A failure burst followed by
+    a successful admin login (admin-wan-login.yaml) from the same IP is the priority.
+  empty: >
+    No CLI admin login failures in this window. The firewall must send the Authentication Access
+    category to syslog.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. Web management (GUI) login failures use
+  other message IDs; see failed-logins.yaml. host.hostname is often blank on SonicWall rows, so
+  the serial number identifies the firewall.
+analyst_notes: >
+  Message ID 200 reads CLI administrator login denied due to bad credentials. SonicWall
+  management exposure has been the entry point in several ransomware campaigns, so treat
+  internet-facing management as a finding even without a successful login.

@@ -1,0 +1,52 @@
+title: All Logs by Hostname
+id: a11da204-d690-4641-b3be-3185caec1db3
+status: Production
+description: >
+  Count WatchGuard Firebox logs by firewall and message ID. A quick check that logs are arriving
+  and which message types each Firebox sends.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/32270678960531"
+  - "https://www.watchguard.com/help/docs/help-center/en-US/Content/en-US/Fireware/logging/log_message_types_c.html"
+tags:
+  - watchguard
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-XTM"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-XTM"
+  | STATS
+      events = COUNT(*),
+      last_seen = MAX(@timestamp)
+      BY host.hostname, event.code, event.action
+  | SORT
+      events DESC
+expected_result: >
+  One row per Firebox, message ID (event.code, an 8-character hex ID) and action, with a count
+  and the last time one arrived. Traffic allow and deny messages make up most of the volume.
+outcomes:
+  rows: >
+    WatchGuard syslog is reaching the SIEM. A Firebox whose last_seen is hours old has stopped
+    sending. Open a raw row to see the xtm.* fields for building other queries.
+  empty: >
+    No WatchGuard logs arrived in this window. Check the Firebox syslog settings before treating
+    anything as clean.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. Message IDs are text, so match them in
+  quotes (event.code=="11000005").
+analyst_notes: >
+  Logon-related message IDs: 11000004 logon, 11000005 logon failed, 3E000002 logon (management
+  and SSL VPN), 25000000 and 25000001 Mobile VPN logon and disconnect, 02070001 VPN connect.
