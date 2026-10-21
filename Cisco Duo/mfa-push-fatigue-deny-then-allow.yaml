@@ -23,8 +23,9 @@ logsource:
   platform: Huntress SIEM
   provider: "Duo"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done.
 placeholders: []
 query: >
   from logs
@@ -47,14 +48,14 @@ outcomes:
     Look for users with denied or fraud rows plus a success row whose last_seen is after the
     denials' first_seen. On the test day 9 users had both.
   empty: >
-    No Duo push authentications on this UTC day, which is unusual for a tenant that uses push.
+    No Duo push authentications in this window, which is unusual for a tenant that uses push.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. The summary shows
-  counts and times, not the order of individual pushes or which IP approved; pivot to that
-  user's raw rows for that.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The summary shows counts and times, not the order of individual pushes or
+  which IP approved; pivot to that user's raw rows for that.
 analyst_notes: >
   Each row is one user and one result, with its count and first and last time seen. Duo push
   factors are duo_push and verified_duo_push (lowercase). Results are denied (user rejected or

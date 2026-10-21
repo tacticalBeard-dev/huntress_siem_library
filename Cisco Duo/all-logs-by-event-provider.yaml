@@ -16,8 +16,11 @@ logsource:
   platform: Huntress SIEM
   provider: "Duo"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
+  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
+  short or empty result as complete.
 placeholders: []
 query: >
   from logs 
@@ -30,15 +33,15 @@ outcomes:
     Duo logs are reaching the SIEM. Open a row to see the full set of duo.* fields for building
     other queries.
   empty: >
-    No Duo logs arrived for this UTC day. If the tenant uses Duo, check the Duo API integration
+    No Duo logs arrived for this window. If the tenant uses Duo, check the Duo API integration
     in Huntress before treating anything as clean.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. Telephony records
-  carry duo.context, duo.phone and duo.type; authentication records carry the result, factor and
-  access device fields.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Telephony records carry duo.context, duo.phone and duo.type; authentication
+  records carry the result, factor and access device fields.
 analyst_notes: >
   This will give you a good starting point for finding the raw logs.
   You can use this information to verify logs are being ingested and retained.

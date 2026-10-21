@@ -25,8 +25,11 @@ logsource:
   platform: Huntress SIEM
   provider: "Microsoft-Windows-Security-Auditing"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
+  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
+  short or empty result as complete.
 placeholders: []
 query: >
   from logs
@@ -51,15 +54,14 @@ outcomes:
     Each row is a TGT issued with RC4. Baseline the known RC4 sources, then investigate new
     ones.
   empty: >
-    No RC4 TGTs on this UTC day. 4768 is only logged on domain controllers with Audit Kerberos
+    No RC4 TGTs in this window. 4768 is only logged on domain controllers with Audit Kerberos
     Authentication Service enabled, so empty is not clean without it.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
-  a).
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. winlog.event_data.* values are strings and field names are case sensitive.
 analyst_notes: >
   This fires on Domain Controllers only as Event 4768 is only logged on DCs. Status 0x0
   means the TGT was successfully issued. Combine with 4624 Logon Type 9 (NewCredentials)

@@ -16,8 +16,11 @@ logsource:
   platform: Huntress SIEM
   provider: "ITDR"
 picker: >
-  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
-  the last UTC day of the picker window, and a future end time returns nothing.
+  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
+  ranges take longer (29 days of a small source and 14 days of a very large one each took about
+  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
+  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
+  short or empty result as complete.
 placeholders:
   - "<session id lowercase>: the session.id from a sign-in row (also shown as itdr.DeviceProperties.SessionId), lowercased, for example a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
 query: >
@@ -41,14 +44,15 @@ outcomes:
     Each row is one record in the session. More than one account in the results means several
     accounts used the same browser profile, which is how a shared or hijacked session shows up.
   empty: >
-    The session ID wasn't seen on this UTC day, or it was typed wrong. Copy the ID from a row in
-    the same UTC day before treating an empty result as meaningful.
+    The session ID wasn't seen in this window, or it was typed wrong. Copy the ID from a row in
+    the same window before treating an empty result as meaningful.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. Only about 40 percent
-  of ITDR records carry a session ID; records without one can't be found this way.
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Only about 40 percent of ITDR records carry a session ID; records without
+  one can't be found this way.
 analyst_notes: >
   The query lowercases session.id so casing in the source record doesn't matter. Do not search
   the message field for IDs: it holds only a one-line summary and never contains user IDs, IPs
