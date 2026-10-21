@@ -1,11 +1,11 @@
 title: All Logs by Hostname
-id: null
+id: 5f001de7-f77e-4dc1-9b2f-09303173f214
 status: Production
 description: >
   Find all logs where the event provider is equal to Syslog-Fortigate.
 author: tacticalbeard-dev
 date: 2025/06/26
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
   - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
@@ -14,11 +14,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Fortigate
-analyst_notes: >
-  This will give you a good starting point for finding the raw logs.
-  You can use this information to verify logs are being ingested and retained.
-  The raw logs will also assist with creating other queries.
+  provider: "Syslog-Fortigate"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -28,3 +28,22 @@ query: >
       host.ip,
       fortigate.src,
       fortigate.dst
+expected_result: >
+  Every FortiGate record for the day, typically millions across a set of firewalls.
+outcomes:
+  rows: >
+    FortiGate syslog is reaching the SIEM. Open a row to see the full set of fortigate.* fields
+    for building other queries.
+  empty: >
+    No FortiGate logs arrived for this UTC day. Check the syslog forwarding before treating
+    anything as clean.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. event.name holds only
+  a category label such as event:vpn, not a description.
+analyst_notes: >
+  This will give you a good starting point for finding the raw logs.
+  You can use this information to verify logs are being ingested and retained.
+  The raw logs will also assist with creating other queries.

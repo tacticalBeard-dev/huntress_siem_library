@@ -1,11 +1,11 @@
 title: Admin Logins on Any Interface
-id: null
+id: 8741b63c-a7d6-4ffe-b886-7499835068b8
 status: Production
 description: >
   Find all logs where the event provider is equal to Syslog-Fortigate and the event codes are failed or successfull admin logins.
 author: tacticalbeard-dev
 date: 2025/06/26
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
   - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
@@ -18,13 +18,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Fortigate
-analyst_notes: >
-  These event codes show admin login attempts for any interface.
-  Event code 32002 is Admin Logon Failed and 32001 is Admin Logon Success.
-  These events can give an indication of normal vs abnormal source and username attempts.
-  Excessive failed login attempts should be investigated to determine intent and point of origin.
-  The method (FTNTFGTmethod) used can also distinguish https vs ssh login types.
+  provider: "Syslog-Fortigate"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -41,3 +39,23 @@ query: >
       event.code,
       fortigate.outcome,
       fortigate.reason
+expected_result: >
+  Admin login successes (32001) and failures (32002) for the day. Failures often run to
+  thousands where a management interface faces the internet.
+outcomes:
+  rows: >
+    Each row is an admin login attempt with user, profile, source and method (https or ssh).
+    Large numbers of failures from public IPs mean the management interface is exposed.
+  empty: >
+    No admin logins on this UTC day, which is possible on quiet firewalls.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period.
+analyst_notes: >
+  These event codes show admin login attempts for any interface.
+  Event code 32002 is Admin Logon Failed and 32001 is Admin Logon Success.
+  These events can give an indication of normal vs abnormal source and username attempts.
+  Excessive failed login attempts should be investigated to determine intent and point of origin.
+  The method (FTNTFGTmethod) used can also distinguish https vs ssh login types.

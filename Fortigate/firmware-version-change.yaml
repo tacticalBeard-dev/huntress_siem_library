@@ -1,5 +1,5 @@
 title: FortiGate Firmware Version Change
-id: null
+id: ba1d4071-0140-4da0-92cc-ae0523791788
 status: Production
 description: >
   Detects FortiGate firmware upgrade, downgrade, and image restore events logged in the
@@ -11,7 +11,7 @@ description: >
   immediate CVE assessment.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1601/"
   - "https://www.fortiguard.com/psirt"
@@ -24,7 +24,39 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Fortigate
+  provider: "Syslog-Fortigate"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+  | WHERE
+      event.code IN (22085, 22096, 32194, 32201, 32202, 32215, 32226, 32235, 32262)
+  | KEEP
+      host.hostname,
+      event.code,
+      event.original,
+      fortigate.duser,
+      fortigate.reason,
+      fortigate.outcome
+expected_result: >
+  Usually nothing. Firmware changes are rare; none was seen on the test day.
+outcomes:
+  rows: >
+    Each row is a firmware upgrade, downgrade, restore or failed load. Read the version in
+    event.original and match it to a change record; treat a downgrade as critical.
+  empty: >
+    No firmware changes on this UTC day, which is normal. Code 32103 (new firmware available) is
+    a notice and isn't included.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Matching relies on
+  Fortinet's documented log IDs; an upgrade path that logs under another ID would be missed.
 analyst_notes: >
   Event codes (FortiOS log message reference): 32201 image loaded, 32202 image restored,
   32215 image updated, 32235 image restored from FortiGuard, 32262 image restore confirmed,
@@ -36,16 +68,3 @@ analyst_notes: >
   for that version. Cross-reference with your change management system to determine
   whether the change was authorized. Code 32103 ("New firmware is available from
   FortiGuard") is a notice, not a change, and is not included.
-query: >
-  from logs
-  | WHERE
-      event.provider=="Syslog-Fortigate"
-  | WHERE
-      event.code IN (22085, 22096, 32194, 32201, 32202, 32215, 32226, 32235, 32262)
-  | KEEP
-      host.hostname,
-      event.code,
-      message,
-      fortigate.duser,
-      fortigate.reason,
-      fortigate.outcome

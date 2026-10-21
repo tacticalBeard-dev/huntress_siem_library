@@ -1,5 +1,5 @@
 title: FortiGate SSL-VPN Authentication Failure Spike
-id: null
+id: 902a2007-4abc-4754-91fd-8e336743693d
 status: Production
 description: >
   Detects a high volume of SSL-VPN authentication failures from a single source IP
@@ -9,7 +9,7 @@ description: >
   compromise. Event code 39426 represents an SSL-VPN login failure.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1110/"
   - "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
@@ -23,14 +23,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Fortigate
-analyst_notes: >
-  Event code 39426 is SSL-VPN login failure. Failures followed by a successful tunnel
-  event (39424 or 39947) from the same source IP indicate a successful brute-force;
-  prioritize those for immediate response. On SSL-VPN events the remote client IP is in
-  source.ip (FortiGate also writes it to fortigate.dst); fortigate.src is empty. Cross-
-  reference high-failure source IPs against threat intelligence feeds and check for
-  corresponding successful SSL-VPN tunnel events using the sslvpn tunnel info query.
+  provider: "Syslog-Fortigate"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -44,3 +41,25 @@ query: >
       failure_count >= 10
   | SORT
       failure_count DESC
+expected_result: >
+  Where SSL-VPN faces the internet, hundreds of source IPs with ten or more failures a day (333
+  on the test day).
+outcomes:
+  rows: >
+    Each row is a source IP with failure_count SSL-VPN failures, highest first. Check the top
+    IPs for any successful tunnel (39424 or 39947) from the same IP.
+  empty: >
+    No source IP reached ten failures on this UTC day.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. On SSL-VPN events the
+  remote client IP is in source.ip (and fortigate.dst); fortigate.src is empty.
+analyst_notes: >
+  Event code 39426 is SSL-VPN login failure. Failures followed by a successful tunnel
+  event (39424 or 39947) from the same source IP indicate a successful brute-force;
+  prioritize those for immediate response. On SSL-VPN events the remote client IP is in
+  source.ip (FortiGate also writes it to fortigate.dst); fortigate.src is empty. Cross-
+  reference high-failure source IPs against threat intelligence feeds and check for
+  corresponding successful SSL-VPN tunnel events using the sslvpn tunnel info query.
