@@ -1,0 +1,55 @@
+title: SharePoint Anonymous Link Created
+id: 09e07d81-4319-4f7d-8e88-c8b1d15e0ba8
+status: Production
+description: >
+  List SharePoint and OneDrive "anyone with the link" sharing links being created or changed.
+  Attackers use them to pull files out without signing in again.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/purview/audit-log-activities"
+  - "https://learn.microsoft.com/en-us/sharepoint/turn-external-sharing-on-or-off"
+  - "https://attack.mitre.org/techniques/T1567/"
+tags:
+  - attack.t1567
+  - attack.exfiltration
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation IN ("AnonymousLinkCreated", "AnonymousLinkUpdated")
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.Operation, itdr.UserId, itdr.ClientIP
+  | SORT
+      events DESC
+expected_result: >
+  A steady stream in many organizations; anonymous links are a normal way to share files.
+outcomes:
+  rows: >
+    One row per user, operation and IP. A user creating many anonymous links in a short time, or
+    from an IP they don't normally use, is the pattern to check. Run the same filter as a raw
+    search and keep itdr.ObjectId (the file) and itdr.SiteUrl to see which files.
+  empty: >
+    No anonymous links were created in this window, or the tenant disables anyone links.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. AnonymousLinkUsed rows (link opened) carry no user, only an IP.
+analyst_notes: >
+  Follow a hit with the same user's FileDownloaded and FileSyncDownloadedFull activity to see
+  whether files were also pulled down directly.

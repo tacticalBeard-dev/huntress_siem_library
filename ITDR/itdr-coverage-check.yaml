@@ -1,0 +1,49 @@
+title: ITDR Coverage Check
+id: 4221b49d-f732-4156-b345-bd32826903f1
+status: Production
+description: >
+  Confirm ITDR data exists for a window before trusting a negative hunt result. Shows the record
+  count and the first and last record time.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+tags:
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY event.provider
+expected_result: >
+  One row with the record count and the first and last record time in the window.
+outcomes:
+  rows: >
+    ITDR data exists for the window. first_seen close to the window start and last_seen close to
+    the end mean the whole window is covered; a gap at either end means the hunt can't speak for
+    that part.
+  empty: >
+    No ITDR data in this window, so any negative hunt result for it is unknown, not clean. Check
+    the ITDR integration.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Covers every tenant at once; per-tenant gaps don't show here. Large windows
+  take longer.
+analyst_notes: >
+  Run this over the same window as a hunt and report coverage alongside the result.

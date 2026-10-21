@@ -1,0 +1,75 @@
+title: ENTRA Persistence Operation Inventory
+id: c761a38e-0992-422d-9858-72cca3b1b659
+status: Production
+description: >
+  Count the Entra ID changes attackers use to keep access (role adds, app registrations,
+  consent, app credentials and owners) by operation and actor. A starting point for a
+  persistence sweep.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-audit-activities"
+  - "https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-illicit-consent-grants"
+  - "https://attack.mitre.org/techniques/T1098/"
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+tags:
+  - attack.t1098.001
+  - attack.t1098.003
+  - attack.t1528
+  - attack.persistence
+  - attack.privilege_escalation
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND (
+        itdr.Operation IN ("Add member to role.", "Add service principal.", "Add service principal credentials.", "Add application.", "Consent to application.", "Add delegated permission grant.", "Add app role assignment to service principal.", "Add app role assignment grant to user.", "Add owner to application.", "Add owner to service principal.", "Add policy to service principal.")
+        OR CONTAINS(itdr.Operation, "Certificates and secrets management")
+      )
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.Operation, itdr.UserId
+  | SORT
+      events DESC
+expected_result: >
+  Rows for most environments over a week. Add service principal. and Add delegated permission
+  grant. are usually the most common, often from Microsoft first-party apps being provisioned.
+outcomes:
+  rows: >
+    Each row is one operation by one actor. Rows where itdr.UserId is a regular user (not an
+    admin or ServicePrincipal_<guid>) adding credentials, owners or role members are the
+    priority. Drill in with entra-role-member-added.yaml, entra-oauth-consent-and-permission-
+    grants.yaml and entra-app-credentials-and-owners-added.yaml.
+  empty: >
+    None of these changes happened in this window. That's unusual across many tenants, so check
+    the window and that ITDR is connected (itdr-coverage-check.yaml).
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Entra operation names end with a period and the match is exact. The
+  certificates and secrets operations contain a dash character in their names, so they're
+  matched with CONTAINS. Changes made by Microsoft services show itdr.UserId as
+  ServicePrincipal_<object id>.
+analyst_notes: |
+  - Add member to role.: someone got a directory role (Global Administrator is the one to worry about most).
+  - Consent to application., Add delegated permission grant., Add app role assignment to service principal.: an app got access to data, possibly through an illicit consent prompt.
+  - Add service principal credentials., Update application (Certificates and secrets management): a secret or certificate was added to an app, which lets an attacker sign in as the app.
+  - Add owner to application., Add owner to service principal.: someone can now manage the app's credentials.
+  - Attack pattern: a vendor or third-party service principal adds itself to a directory role (for example Global Administrator), then adds secrets to other existing app registrations within minutes, often with a scripted user agent such as Python-urllib or python-requests.
+  - Benign: Add service principal. by a ServicePrincipal_<guid> actor targeting https://identity.azure.net/ is Azure managed identity creation.
+  - Benign: a user running Add application., Add owner to application., Add owner to service principal., then a secret add about a minute later, is the normal portal app registration workflow. Confirm the user's sign-in IPs with user-signin-source-ips.yaml.
+  - The ServicePrincipal_<guid> in itdr.UserId is the per-tenant object ID, not the app ID; open the record to identify the app.

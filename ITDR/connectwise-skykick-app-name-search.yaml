@@ -1,0 +1,63 @@
+title: ConnectWise and SkyKick App Name Search
+id: 5ed5f84c-e247-489c-9eb5-59abe1461400
+status: Production
+description: >
+  Inventory ITDR activity by ConnectWise or SkyKick app display name. The name varies by tenant
+  age (older tenants show SkyKick Cloud Manager), so this catches app identities the app ID
+  sweep might miss.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://www.huntress.com/blog/vendor-credential-enables-unauthorized-access"
+  - "https://www.connectwise.com/company/trust/advisories"
+tags:
+  - attack.t1195
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND (
+        CONTAINS(itdr.UserId, "skykick")
+        OR CONTAINS(itdr.UserId, "connectwise")
+        OR CONTAINS(itdr.UserId, "cloud backup")
+        OR CONTAINS(itdr.UserId, "cloud manage")
+      )
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.UserId, itdr.UserKey
+  | SORT
+      events DESC
+expected_result: >
+  One row per matching app display name and app ID, only in tenants that used the products.
+outcomes:
+  rows: >
+    Compare itdr.UserKey against the app IDs in connectwise-cloud-backup-app-id-sweep.yaml. A
+    matching name with a different app ID is a different app (or a lookalike) and worth a closer
+    look.
+  empty: >
+    No app activity under these names in this window. A dormant app logs nothing; check
+    Enterprise applications in Entra ID.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Four CONTAINS terms over many days of ITDR can end with Aggregation stopped
+  early; run a few days at a time. CONTAINS is case-insensitive, so cloud manage also matches
+  unrelated apps or users with that text in the name. User accounts whose UPN contains these
+  words also match.
+analyst_notes: >
+  Generic words like cloud backup can match other vendors' apps; confirm the app ID before
+  acting.

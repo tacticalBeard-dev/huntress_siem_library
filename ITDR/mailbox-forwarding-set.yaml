@@ -1,0 +1,65 @@
+title: Mailbox Forwarding Set
+id: 453f1716-5d0f-454d-93f9-0980e4510d63
+status: Production
+description: >
+  Find mailbox-level forwarding being set or changed with Set-Mailbox. Unlike an inbox rule,
+  this forwards every message and doesn't show in the user's rules list.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/powershell/module/exchange/set-mailbox"
+  - "https://learn.microsoft.com/en-us/defender-office-365/outbound-spam-policies-external-email-forwarding"
+  - "https://attack.mitre.org/techniques/T1114/003/"
+tags:
+  - attack.t1114.003
+  - attack.collection
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation=="Set-Mailbox"
+  | WHERE
+      CONTAINS(event.original, "ForwardingSmtpAddress")
+      OR CONTAINS(event.original, "ForwardingAddress")
+      OR CONTAINS(event.original, "DeliverToMailboxAndForward")
+  | KEEP
+      @timestamp,
+      itdr.UserId,
+      itdr.ObjectId,
+      itdr.ClientIP,
+      itdr.Parameters.Name,
+      itdr.Parameters.Value
+expected_result: >
+  Very few rows. Set-Mailbox itself is common (mostly Microsoft service changes), but forwarding
+  changes are rare.
+outcomes:
+  rows: >
+    itdr.ObjectId is the mailbox, itdr.UserId is who made the change. ForwardingSmtpAddress set
+    to an outside address is the classic takeover sign. An empty value means forwarding was
+    removed. A change made by the mailbox owner from an unfamiliar IP is the priority row.
+  empty: >
+    No mailbox forwarding was set or cleared in this window. Inbox rules can forward too: run
+    inbox-rule-hiding-or-forwarding.yaml.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The match is a text search of the raw record. ForwardingAddress (forward to
+  an internal contact) and ForwardingSmtpAddress (any address) are separate settings; the query
+  catches both.
+analyst_notes: >
+  An admin setting forwarding for a departed employee is the common legitimate case. Forwarding
+  set by the user themselves, from Outlook on the web or a new IP, shortly after a risky sign-in
+  is the case to escalate.

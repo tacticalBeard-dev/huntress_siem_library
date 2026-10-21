@@ -1,0 +1,74 @@
+title: ConnectWise Cloud Backup App ID Sweep
+id: 43e20296-b2b6-4c6f-a207-8cfcbe0ebbc5
+status: Production
+description: >
+  Find logged activity by the seven ConnectWise and SkyKick app identities that ConnectWise
+  disabled on October 17, 2026. Sign-in records carry the app in itdr.ApplicationId; app-only
+  records carry its ID in itdr.UserKey, so both are checked.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://www.huntress.com/blog/vendor-credential-enables-unauthorized-access"
+  - "https://www.connectwise.com/company/trust/advisories"
+tags:
+  - attack.t1195
+  - attack.t1078.004
+  - attack.t1550.001
+  - attack.initial_access
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND (
+        itdr.ApplicationId IN ("506e08f9-6e9a-4da4-942b-a099a03644ae", "2399d300-6fca-4e6a-a686-399fefe75b83", "24205314-2b89-4e07-a2a4-579e898a5640", "b78f6a77-d4e5-46fb-87e5-d1648bd02519", "0de14c77-b9b0-4137-9360-34878a929827", "412dcf96-176d-4b3a-a1b0-4981ad66971e", "b2b55f5b-7758-4719-8d8f-88ae172e6bdb")
+        OR itdr.UserKey IN ("506e08f9-6e9a-4da4-942b-a099a03644ae", "2399d300-6fca-4e6a-a686-399fefe75b83", "24205314-2b89-4e07-a2a4-579e898a5640", "b78f6a77-d4e5-46fb-87e5-d1648bd02519", "0de14c77-b9b0-4137-9360-34878a929827", "412dcf96-176d-4b3a-a1b0-4981ad66971e", "b2b55f5b-7758-4719-8d8f-88ae172e6bdb")
+      )
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.UserId, itdr.UserKey, itdr.Operation
+  | SORT
+      events DESC
+expected_result: >
+  Rows only for tenants that used ConnectWise Cloud Backup or SkyKick Cloud Manager, and only
+  before the apps were disabled.
+outcomes:
+  rows: >
+    Each row is app activity in a tenant (itdr.UserId is the app's display name on app-only
+    records). Activity is expected where the product was in use. Look for operations a backup or
+    management tool shouldn't need (role adds, credential adds, inbox rules, mail sends) and for
+    activity after 07:00 UTC on October 17, 2026, when the apps were disabled.
+  empty: >
+    No logged activity by these apps in this window. A consented but dormant app does no logged
+    work, so empty doesn't prove the app is absent from a tenant; check Enterprise applications
+    in Entra ID.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Service principal sign-ins, where the stolen-credential token requests
+  appear, aren't in ITDR. Run windows that end before October 17, 2026 to see the apps while
+  they were active, a week or less at a time; longer windows can end with Aggregation stopped
+  early.
+analyst_notes: |
+  App IDs (public, from the advisory):
+  - 506e08f9-6e9a-4da4-942b-a099a03644ae: ConnectWise Cloud Backup
+  - 2399d300-6fca-4e6a-a686-399fefe75b83: Cloud Management
+  - 24205314-2b89-4e07-a2a4-579e898a5640: Cloud Management - MS Teams
+  - b78f6a77-d4e5-46fb-87e5-d1648bd02519: Cloud Management - Exchange Online
+  - 0de14c77-b9b0-4137-9360-34878a929827: Cloud Management - MS Graph
+  - 412dcf96-176d-4b3a-a1b0-4981ad66971e: Cloud Management - Partner Center
+  - b2b55f5b-7758-4719-8d8f-88ae172e6bdb: Cloud Management - SharePoint Online
+  - Remove the apps' consent in any tenant that still has them, and review what they accessed.

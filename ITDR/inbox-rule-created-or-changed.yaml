@@ -1,0 +1,70 @@
+title: Inbox Rule Created or Changed
+id: 1f1a36d7-962b-4728-9e88-26e37c1445ab
+status: Production
+description: >
+  List every inbox rule created, changed or re-enabled, from Outlook on the web, PowerShell or
+  the Outlook desktop client. Attackers who take over a mailbox use rules to hide replies and
+  forward mail.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/purview/audit-log-activities"
+  - "https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-outlook-rules-forms-attack"
+  - "https://attack.mitre.org/techniques/T1564/008/"
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+tags:
+  - attack.t1564.008
+  - attack.t1114.003
+  - attack.defense_evasion
+  - attack.collection
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation IN ("New-InboxRule", "Set-InboxRule", "Enable-InboxRule", "UpdateInboxRules")
+  | KEEP
+      @timestamp,
+      itdr.Operation,
+      itdr.UserId,
+      itdr.ObjectId,
+      itdr.ClientIP,
+      itdr.Parameters.Name,
+      itdr.Parameters.Value
+expected_result: >
+  A steady stream of rows in most environments. UpdateInboxRules (rules saved from the Outlook
+  desktop client) is usually by far the most common operation; New-InboxRule and Set-InboxRule
+  are much rarer.
+outcomes:
+  rows: >
+    Each row is one rule change. itdr.Parameters.Name and itdr.Parameters.Value list the rule
+    settings side by side: look for MoveToFolder pointing at RSS Feeds, Archive, Conversation
+    History, Junk or Deleted Items, for ForwardTo, ForwardAsAttachmentTo or RedirectTo, for
+    DeleteMessage, and for one-character or punctuation-only rule names. Check itdr.ClientIP
+    against the user's normal sign-in IPs.
+  empty: >
+    No rules were created or changed in this window. That's unusual across many mailboxes but
+    normal for a single user. Mailbox auditing must be on (it is by default in Microsoft 365).
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. UpdateInboxRules rows from the Outlook desktop client may carry the rule
+  detail in itdr.OperationProperties rather than itdr.Parameters. Rules created through
+  Microsoft Graph by an OAuth app can show the app, not a user, in itdr.UserId.
+analyst_notes: >
+  Inbox rules are the most common persistence step after a Microsoft 365 account takeover. Run
+  inbox-rule-hiding-or-forwarding.yaml to narrow this list to the rule settings attackers use.
+  To check one user, add AND itdr.UserId=="<user@example.com>" to the WHERE. Remove-InboxRule
+  and Disable-InboxRule rows (not listed here) can show an attacker cleaning up.

@@ -25,6 +25,10 @@ Huntress SIEM runs a restricted ES|QL. These rules come from testing against liv
 | `==` is case sensitive | So are field names (`winlog.event_data.Ipaddress` and `IpAddress` are different fields). Use `TO_LOWER(field) == "value"` for exact case-insensitive matches and `CONTAINS(field, "text")` for case-insensitive partial matches. The same operation can appear with different casing, for example `UserLoggedIn` and `UserLoggedin`. |
 | `message` is a summary | It holds one line like "User successfully logged in." and never contains IPs, users or IDs. Don't search it for IOCs. Use `CONTAINS(event.original, "text")` to search the raw event. |
 | Watch `WHERE` after `STATS` | A `WHERE` after a `STATS` that includes `MIN(@timestamp)` or `MAX(@timestamp)` returns no rows. Filter on counts in a query without the timestamp aggregations. |
+| Results stop at 1,000 rows | A `stats` result shows at most 1,000 rows. In a wide window across many tenants, sort so the rows you need come first, or narrow the window. |
+| `count_distinct` on huge fields | `count_distinct` was exact up to a few thousand distinct values but returned partial results (half a day of a one-day window) on a field with tens of thousands of values, like a record ID. Use it on users or IPs, not IDs. |
+| Aggregation stopped early | Very wide or heavy searches (many `CONTAINS` terms, long `IN` lists over many days of a large source) can end with "Aggregation stopped early" and no usable result. Split the window and run it in parts. |
+| One `STATS` per query | Chaining a second `STATS` after the first (`STATS ... BY a, b \| STATS ... BY a`) returned no rows. |
 | Wait for Done | A `stats` search shows nothing until it's finished ("Aggregating results..." walks back through the window). A raw search shows the newest 100 rows first and loads older rows only as you scroll; scroll until the grid says Done before treating a short or empty result as complete. |
 | Headers aren't field names | The grid relabels some columns (for example `itdr.ClientIP` shows as `source.ip`) and always adds Organization. Take field names from a row's details. |
 | Missing fields count as null | `COUNT(field)` counts only rows where the field exists (Huntress's docs say missing fields read as empty values; testing showed otherwise). Empty strings still count. |
@@ -50,8 +54,10 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Where from | `itdr.ClientIP`, `itdr.ActorIpAddress`, `source.ip` (check all three; app-only directory changes carry no IP) |
 | Result | `itdr.LogonError`, `itdr.ErrorNumber`. `itdr.ResultStatus` reads Success even on failed sign-ins, so don't use it. |
 | Session and device | `session.id`, `itdr.DeviceProperties.OS`, `.BrowserType`, `.IsCompliant` (sign-in records only) |
+| Exchange admin actions | `itdr.Parameters.Name` and `itdr.Parameters.Value` list cmdlet parameters side by side (inbox rules, Set-Mailbox, permissions, transport rules). Both hold every parameter of the call in one value, so search them with `CONTAINS(event.original, "...")`. |
+| Directory changes | `itdr.Target.ID`, `itdr.ModifiedProperties.Name`, `.NewValue`, `.OldValue` (role, app, consent and user changes) |
 | Raw details | `itdr.ExtendedProperties.Value` holds result detail, user agent and request type as one comma-joined string. Device code sign-ins carry `Cmsi:Cmsi` here. |
-| Traps | Some operation names end with a period (for example `Enable Strong Authentication.`, while `UserLoggedIn` has none); match those with `LIKE` or `TO_LOWER(...) LIKE`. Anonymous Microsoft Forms responses log IP `0.0.0.0`. App directory actions show `itdr.UserId` as `ServicePrincipal_<guid>`, the object ID, not the app ID. |
+| Traps | Some operation names end with a period (for example `Enable Strong Authentication.`, while `UserLoggedIn` has none); match those with `LIKE` or `TO_LOWER(...) LIKE`. Anonymous Microsoft Forms responses log IP `0.0.0.0`. App directory actions show `itdr.UserId` as `ServicePrincipal_<guid>`, the object ID, not the app ID. The certificates and secrets operation names contain an en dash, so match them with `CONTAINS(itdr.Operation, "Certificates and secrets management")`. |
 
 ### Cisco Duo
 
@@ -111,16 +117,37 @@ The exact `event.provider` value for each source, the fields the queries use, an
 
 | Query | Use it to |
 |---|---|
+| [app-activity-by-app-id.yaml](ITDR/app-activity-by-app-id.yaml) | See what one app identity did, by app ID |
+| [conditional-access-policy-changes.yaml](ITDR/conditional-access-policy-changes.yaml) | List Conditional Access and other Entra policy changes |
+| [connectwise-cloud-backup-app-id-sweep.yaml](ITDR/connectwise-cloud-backup-app-id-sweep.yaml) | Sweep for the ConnectWise Cloud Backup (SkyKick) app IDs |
+| [connectwise-cloud-backup-ioc-ip-detail.yaml](ITDR/connectwise-cloud-backup-ioc-ip-detail.yaml) | List raw records from the ConnectWise Cloud Backup campaign IPs |
+| [connectwise-cloud-backup-ioc-ip-sweep.yaml](ITDR/connectwise-cloud-backup-ioc-ip-sweep.yaml) | Summarize activity from the ConnectWise Cloud Backup campaign IPs |
+| [connectwise-skykick-app-name-search.yaml](ITDR/connectwise-skykick-app-name-search.yaml) | Find ConnectWise or SkyKick apps by display name |
+| [entra-account-lockouts.yaml](ITDR/entra-account-lockouts.yaml) | Rank accounts and IPs by smart lockouts |
+| [entra-app-credentials-and-owners-added.yaml](ITDR/entra-app-credentials-and-owners-added.yaml) | Find secrets, certificates and owners added to apps |
 | [entra-find-all-events-in-a-session.yaml](ITDR/entra-find-all-events-in-a-session.yaml) | See every record in one browser session, across accounts |
 | [entra-mfa-disabled.yaml](ITDR/entra-mfa-disabled.yaml) | Find per-user MFA being turned off |
 | [entra-mfa-enabled.yaml](ITDR/entra-mfa-enabled.yaml) | Find per-user MFA being turned on |
+| [entra-oauth-consent-and-permission-grants.yaml](ITDR/entra-oauth-consent-and-permission-grants.yaml) | List app consent and permission grants |
+| [entra-password-spray-by-ip.yaml](ITDR/entra-password-spray-by-ip.yaml) | Rank IPs by how many accounts they failed against |
+| [entra-persistence-operation-inventory.yaml](ITDR/entra-persistence-operation-inventory.yaml) | Count role, app and consent changes by actor |
+| [entra-role-member-added.yaml](ITDR/entra-role-member-added.yaml) | Find accounts added to a directory role |
+| [entra-user-account-changes.yaml](ITDR/entra-user-account-changes.yaml) | List accounts created, deleted, disabled or reset |
 | [entra-user-activity-by-actor-ip-address.yaml](ITDR/entra-user-activity-by-actor-ip-address.yaml) | Summarize everything one IP did |
 | [entra-user-login-blocked-by-conditional-access.yaml](ITDR/entra-user-login-blocked-by-conditional-access.yaml) | List sign-ins Conditional Access blocked |
 | [entra-user-login-failures.yaml](ITDR/entra-user-login-failures.yaml) | List failed sign-ins |
 | [entra-user-login-invalid-username-or-password.yaml](ITDR/entra-user-login-invalid-username-or-password.yaml) | List wrong-password failures |
 | [entra-user-login-strong-auth-enrollment-required.yaml](ITDR/entra-user-login-strong-auth-enrollment-required.yaml) | List sign-ins interrupted for MFA |
 | [impossible-travel-signin.yaml](ITDR/impossible-travel-signin.yaml) | Rank accounts by distinct sign-in IPs in a day |
+| [inbox-rule-created-or-changed.yaml](ITDR/inbox-rule-created-or-changed.yaml) | List every inbox rule created or changed |
+| [inbox-rule-hiding-or-forwarding.yaml](ITDR/inbox-rule-hiding-or-forwarding.yaml) | Find rules that forward, delete or hide mail |
+| [itdr-coverage-check.yaml](ITDR/itdr-coverage-check.yaml) | Confirm ITDR data covers a window before trusting a negative |
+| [mailbox-delegation-added.yaml](ITDR/mailbox-delegation-added.yaml) | Find full access, send as and send on behalf grants |
+| [mailbox-forwarding-set.yaml](ITDR/mailbox-forwarding-set.yaml) | Find mailbox-level forwarding changes |
 | [oauth-device-code-flow-authentication.yaml](ITDR/oauth-device-code-flow-authentication.yaml) | Find device code sign-ins |
+| [sharepoint-anonymous-link-created.yaml](ITDR/sharepoint-anonymous-link-created.yaml) | List anyone-with-the-link sharing |
+| [transport-rule-changes.yaml](ITDR/transport-rule-changes.yaml) | List Exchange mail flow rule changes |
+| [user-signin-source-ips.yaml](ITDR/user-signin-source-ips.yaml) | List one user's sign-in IPs |
 
 **Cisco Duo**
 
@@ -199,16 +226,22 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | You're looking at | Start with |
 |---|---|
 | A suspicious Microsoft 365 sign-in | [entra-user-activity-by-actor-ip-address.yaml](ITDR/entra-user-activity-by-actor-ip-address.yaml), then [entra-find-all-events-in-a-session.yaml](ITDR/entra-find-all-events-in-a-session.yaml) |
-| A possible account takeover | [impossible-travel-signin.yaml](ITDR/impossible-travel-signin.yaml), [entra-mfa-disabled.yaml](ITDR/entra-mfa-disabled.yaml), [entra-user-login-failures.yaml](ITDR/entra-user-login-failures.yaml) |
+| A possible account takeover | [impossible-travel-signin.yaml](ITDR/impossible-travel-signin.yaml), [entra-mfa-disabled.yaml](ITDR/entra-mfa-disabled.yaml), [entra-user-login-failures.yaml](ITDR/entra-user-login-failures.yaml), then the business email compromise row |
+| Business email compromise (suspicious inbox rule, forwarding) | [inbox-rule-hiding-or-forwarding.yaml](ITDR/inbox-rule-hiding-or-forwarding.yaml), [inbox-rule-created-or-changed.yaml](ITDR/inbox-rule-created-or-changed.yaml), [mailbox-forwarding-set.yaml](ITDR/mailbox-forwarding-set.yaml), [mailbox-delegation-added.yaml](ITDR/mailbox-delegation-added.yaml), [transport-rule-changes.yaml](ITDR/transport-rule-changes.yaml) |
+| Entra persistence or privilege escalation | [entra-persistence-operation-inventory.yaml](ITDR/entra-persistence-operation-inventory.yaml), then [entra-role-member-added.yaml](ITDR/entra-role-member-added.yaml), [entra-oauth-consent-and-permission-grants.yaml](ITDR/entra-oauth-consent-and-permission-grants.yaml), [entra-app-credentials-and-owners-added.yaml](ITDR/entra-app-credentials-and-owners-added.yaml), [entra-user-account-changes.yaml](ITDR/entra-user-account-changes.yaml), [conditional-access-policy-changes.yaml](ITDR/conditional-access-policy-changes.yaml) |
+| Illicit OAuth consent | [entra-oauth-consent-and-permission-grants.yaml](ITDR/entra-oauth-consent-and-permission-grants.yaml), [entra-app-credentials-and-owners-added.yaml](ITDR/entra-app-credentials-and-owners-added.yaml) |
+| Data shared out of SharePoint or OneDrive | [sharepoint-anonymous-link-created.yaml](ITDR/sharepoint-anonymous-link-created.yaml) |
 | Device code phishing | [oauth-device-code-flow-authentication.yaml](ITDR/oauth-device-code-flow-authentication.yaml) |
 | MFA fatigue | [mfa-push-fatigue-deny-then-allow.yaml](Cisco%20Duo/mfa-push-fatigue-deny-then-allow.yaml), [duo-authentication-failure-spike.yaml](Cisco%20Duo/duo-authentication-failure-spike.yaml) |
-| Password spraying or brute force | [entra-user-login-invalid-username-or-password.yaml](ITDR/entra-user-login-invalid-username-or-password.yaml), [ssl-vpn-auth-failure-spike.yaml](Fortigate/ssl-vpn-auth-failure-spike.yaml), [account-logon-failed.yaml](Windows%20Event/account-logon-failed.yaml) |
+| Password spraying or brute force | [entra-password-spray-by-ip.yaml](ITDR/entra-password-spray-by-ip.yaml), [entra-account-lockouts.yaml](ITDR/entra-account-lockouts.yaml), [entra-user-login-invalid-username-or-password.yaml](ITDR/entra-user-login-invalid-username-or-password.yaml), [ssl-vpn-auth-failure-spike.yaml](Fortigate/ssl-vpn-auth-failure-spike.yaml), [account-logon-failed.yaml](Windows%20Event/account-logon-failed.yaml) |
 | An exposed firewall admin interface | [admin-logins-on-any-interface.yaml](Fortigate/admin-logins-on-any-interface.yaml), [admin-login-from-external-ip.yaml](Fortigate/admin-login-from-external-ip.yaml), [admin-wan-login.yaml](Sonicwall/admin-wan-login.yaml) |
 | A firewall firmware change | [firmware-version-change.yaml](Fortigate/firmware-version-change.yaml) |
 | A new account or privilege change | [account-management-events.yaml](Windows%20Event/account-management-events.yaml), [privileged-group-membership-change.yaml](Windows%20Event/privileged-group-membership-change.yaml) |
 | Persistence on a Windows host | [scheduled-task-creation.yaml](Windows%20Event/scheduled-task-creation.yaml), [registry-key-modification.yaml](Windows%20Event/registry-key-modification.yaml) |
 | Kerberos or NTLM credential abuse | [kerberoasting-rc4-service-ticket-request.yaml](Windows%20Event/kerberoasting-rc4-service-ticket-request.yaml), [overpass-the-hash-rc4-tgt-request.yaml](Windows%20Event/overpass-the-hash-rc4-tgt-request.yaml), [pass-the-hash-ntlm-network-logon-zero-key.yaml](Windows%20Event/pass-the-hash-ntlm-network-logon-zero-key.yaml) |
 | An IOC sweep | [entra-user-activity-by-actor-ip-address.yaml](ITDR/entra-user-activity-by-actor-ip-address.yaml), [sonicwall-vpn-ioc-login-by-ip.yaml](Sonicwall/sonicwall-vpn-ioc-login-by-ip.yaml) |
+| The ConnectWise Cloud Backup (SkyKick) compromise, October 2026 | [connectwise-cloud-backup-ioc-ip-sweep.yaml](ITDR/connectwise-cloud-backup-ioc-ip-sweep.yaml), [connectwise-cloud-backup-ioc-ip-detail.yaml](ITDR/connectwise-cloud-backup-ioc-ip-detail.yaml), [connectwise-cloud-backup-app-id-sweep.yaml](ITDR/connectwise-cloud-backup-app-id-sweep.yaml), [connectwise-skykick-app-name-search.yaml](ITDR/connectwise-skykick-app-name-search.yaml), then [entra-persistence-operation-inventory.yaml](ITDR/entra-persistence-operation-inventory.yaml) |
+| Proving a negative hunt result | [itdr-coverage-check.yaml](ITDR/itdr-coverage-check.yaml) over the same window |
 | Whether logs are arriving | The "all logs" query for each source above |
 
 ## Huntress documentation

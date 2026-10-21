@@ -1,0 +1,59 @@
+title: ENTRA User Account Changes
+id: 10f27c42-9ff7-498d-b879-4bcd0726af30
+status: Production
+description: >
+  List Entra ID accounts created, deleted or disabled, and passwords reset or changed. Attackers
+  create accounts to keep access and reset passwords to take accounts over.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-audit-activities"
+  - "https://attack.mitre.org/techniques/T1136/003/"
+  - "https://attack.mitre.org/techniques/T1098/"
+tags:
+  - attack.t1136.003
+  - attack.t1098
+  - attack.persistence
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND itdr.Operation IN ("Add user.", "Delete user.", "Disable account.", "Reset user password.", "Change user password.")
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.Operation, itdr.UserId, itdr.ObjectId
+  | SORT
+      events DESC
+expected_result: >
+  Rows most weeks, mostly onboarding, offboarding and helpdesk resets.
+outcomes:
+  rows: >
+    itdr.UserId is who made the change and itdr.ObjectId is the account changed. Watch for
+    accounts created by a regular user, accounts created outside onboarding, a password reset by
+    an unexpected admin, and a reset followed by a sign-in from a new IP.
+  empty: >
+    No account changes in this window. That's unusual across many tenants, so check the window
+    and ITDR coverage.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Self-service password resets and changes show the user as the actor.
+  Accounts synced from on-premises Active Directory are created there, so look at Windows 4720
+  events too.
+analyst_notes: >
+  Change user password. is a user changing their own password; Reset user password. is an admin
+  or self-service reset. A burst of resets by one actor can be an attacker locking users out.

@@ -1,0 +1,68 @@
+title: ConnectWise Cloud Backup IOC IP Detail
+id: b1cc666b-e42c-4054-bfcf-3965d5598d55
+status: Production
+description: >
+  Raw drill-down of ITDR records from the October 2026 ConnectWise Cloud Backup campaign IPs,
+  with timestamps and sign-in errors, for the rows connectwise-cloud-backup-ioc-ip-sweep.yaml
+  found.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://www.huntress.com/blog/vendor-credential-enables-unauthorized-access"
+  - "https://www.connectwise.com/company/trust/advisories"
+tags:
+  - attack.t1078.004
+  - attack.t1110.003
+  - attack.initial_access
+  - attack.credential_access
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND (
+        source.ip IN ("144.172.64.128", "144.172.64.99", "144.172.64.60", "144.172.94.243")
+        OR itdr.ClientIP IN ("144.172.64.128", "144.172.64.99", "144.172.64.60", "144.172.94.243")
+        OR itdr.ActorIpAddress IN ("144.172.64.128", "144.172.64.99", "144.172.64.60", "144.172.94.243")
+      )
+  | KEEP
+      @timestamp,
+      itdr.Operation,
+      itdr.UserId,
+      itdr.ClientIP,
+      itdr.ActorIpAddress,
+      source.ip,
+      itdr.LogonError
+expected_result: >
+  The individual records behind the sweep's counts, newest first.
+outcomes:
+  rows: >
+    Read itdr.LogonError on failures (InvalidUserNameOrPassword means the account exists and the
+    password was wrong; IdsLocked means smart lockout kicked in). For a UserLoggedIn row, open
+    View and note session.id, then run entra-find-all-events-in-a-session.yaml on it.
+  empty: >
+    None of the campaign IPs appear in ITDR for this window. Set the picker to cover October 10
+    to 20, 2026 at least.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Same coverage gap as the sweep: service principal sign-ins aren't in ITDR.
+analyst_notes: |
+  - 144.172.64.128: primary app sign-in infrastructure, and the Oct 13 to 14 password spray.
+  - 144.172.64.99: password spray, Oct 10 to 14.
+  - 144.172.64.60: failed logins, Oct 18.
+  - 144.172.94.243: broad, ongoing failed-login spray.
+  - All four are on AS14956 (RouterHosting). Any UserLoggedIn row is the priority: treat the account as compromised, reset the password, revoke sessions, and check inbox rules, MFA changes and app consents.
+  - These IOCs are from October 2026. Infrastructure moves on, so an empty result for later dates says little; check the references for updates.
