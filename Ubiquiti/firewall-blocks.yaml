@@ -1,0 +1,60 @@
+title: Firewall Blocks
+id: 1125f4ab-6f95-4435-abec-0860336f11b8
+status: Production
+description: >
+  Summarize UniFi gateway firewall blocks (event 203, Blocked by Firewall) by policy, risk and
+  internal client. Repeated blocks from one client to risky destinations can point to an
+  infected device.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/32270678960531"
+  - "https://attack.mitre.org/techniques/T1071/"
+tags:
+  - attack.t1071
+  - attack.command_and_control
+  - ubiquiti
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Ubiquiti"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Ubiquiti"
+      AND event.code=="203"
+  | STATS
+      blocks = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY unifi_network.UNIFIpolicyName, unifi_network.UNIFIrisk, unifi_network.UNIFIsrcClientIp, host.hostname
+  | SORT
+      blocks DESC
+expected_result: >
+  Rows wherever firewall policies or threat management block traffic, mostly policy blocks.
+outcomes:
+  rows: >
+    One row per policy, risk level, internal client and gateway. Policy names tell you which
+    rule fired. A client blocked again and again by a threat or security policy, or blocks with
+    a high unifi_network.UNIFIrisk, are the priority. Rerun as a raw search on that client IP
+    and keep destination.ip, unifi_network.UNIFIdstDomain and unifi_network.UNIFIdstRegion to
+    see where it was trying to go.
+  empty: >
+    No firewall blocks in this window. The gateway must have block logging on for its firewall
+    policies, and the SIEM server integration enabled.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. unifi_network.UNIFIsrcClientIp is the
+  internal address; unifi_network.UNIFIsrcClientHostname and UNIFIsrcClientMac identify the
+  device.
+analyst_notes: >
+  Event 203 rows are in the Security category. Allowed flows are logged as traffic rows and
+  aren't included.

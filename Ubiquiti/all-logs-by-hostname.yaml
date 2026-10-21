@@ -1,0 +1,53 @@
+title: All Logs by Hostname
+id: 5b3a8407-d5db-4d93-b40d-05a5a4248b1f
+status: Production
+description: >
+  Count UniFi logs by gateway or console, event code and event name. A quick check that UniFi
+  logs are arriving and a list of the event types each one sends.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/32270678960531"
+tags:
+  - ubiquiti
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Ubiquiti"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Ubiquiti"
+  | STATS
+      events = COUNT(*),
+      last_seen = MAX(@timestamp)
+      BY host.hostname, event.code, event.name
+  | SORT
+      events DESC
+expected_result: >
+  One row per UniFi device, event code and event name. traffic rows are flow logs; the rest are
+  UniFi system events such as Blocked by Firewall, WiFi Client Connected and Internet Down.
+outcomes:
+  rows: >
+    UniFi syslog is reaching the SIEM. A device whose last_seen is hours old has stopped
+    sending. Open a raw row to see the unifi_network.* (or unifi_os.*, unifi_protect.*) fields
+    for building other queries.
+  empty: >
+    No UniFi logs arrived in this window. Check the UniFi console's SIEM or syslog server
+    setting before treating anything as clean.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. event.code is text (for example "203"),
+  and traffic rows carry "traffic" instead of a number.
+analyst_notes: >
+  Fields are split by UniFi application: unifi_network.* for the Network app, unifi_os.* for the
+  console, unifi_protect.* for Protect. The UNIFIcategory field groups events (Security, Audit,
+  Client Devices, Internet and WAN, UniFi Devices).
