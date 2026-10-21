@@ -54,7 +54,7 @@ known_limits: >
   (itdr.DeviceProperties.*) are only populated on sign-in records, so they can be blank on other
   rows. UserStrongAuthEnrollmentRequired wasn't seen in testing but is a documented Microsoft
   value.
-analyst_notes: >
+analyst_notes: |
   One of the following conditions is true:
   1. UserStrongAuthEnrollmentRequiredInterrupt - User needs to enroll for second factor authentication (interactive).
   2. UserStrongAuthClientAuthNRequiredInterrupt - Strong authentication is required and the user did not pass the MFA challenge.

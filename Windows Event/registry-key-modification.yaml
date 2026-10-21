@@ -46,8 +46,7 @@ outcomes:
     errors as Not all query parsed or Invalid operator.
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
-  a).
+  values are strings and field names are case sensitive.
 analyst_notes: >
   Event 4657 (a registry value was modified) for any key under ...\CurrentVersion\Run, which covers
   Run and RunOnce in both HKLM (\REGISTRY\MACHINE) and HKCU (\REGISTRY\USER). Run keys are a common

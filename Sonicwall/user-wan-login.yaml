@@ -51,9 +51,9 @@ outcomes:
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. sonicwall.sess was
-  empty in testing. host.hostname is never populated for SonicWall; use sonicwall.sn (serial) or
-  host.ip to identify the firewall.
-analyst_notes: >
+  Covers one UTC day per search; run it once per day for a longer period. sonicwall.sess doesn't
+  exist under that name in Huntress, so that column stays blank. host.hostname is never
+  populated for SonicWall; use sonicwall.sn (serial) or host.ip to identify the firewall.
+analyst_notes: |
   238 = User WAN Login (Authentication Access)
   These events reach the SIEM only when the firewall's syslog includes the Authentication Access log category.

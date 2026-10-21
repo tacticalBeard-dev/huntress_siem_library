@@ -53,7 +53,7 @@ outcomes:
     errors as Not all query parsed or Invalid operator.
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period.
-analyst_notes: >
+analyst_notes: |
   These event codes show admin login attempts for any interface.
   Event code 32002 is Admin Logon Failed and 32001 is Admin Logon Success.
   These events can give an indication of normal vs abnormal source and username attempts.

@@ -52,12 +52,11 @@ outcomes:
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. sonicwall.sess was
-  empty in testing. host.hostname is never populated for SonicWall; use sonicwall.sn (serial) or
-  host.ip to identify the firewall.
-analyst_notes: >
+  Covers one UTC day per search; run it once per day for a longer period. sonicwall.sess doesn't
+  exist under that name in Huntress, so that column stays blank. host.hostname is never
+  populated for SonicWall; use sonicwall.sn (serial) or host.ip to identify the firewall.
+analyst_notes: |
   236 = Admin WAN Login (Authentication Access)
-  Failed WAN logins could be an indication of targeted or random bruteforce attempts.
-  It is also an indication of a potentially exposed WAN interface attack vector when source is not trusted location.
+  A login from an unexpected location can mean stolen credentials or an exposed WAN management interface.
   WAN accounts with the admin role should warrant additional scrutiny.
   These events reach the SIEM only when the firewall's syslog includes the Authentication Access log category.

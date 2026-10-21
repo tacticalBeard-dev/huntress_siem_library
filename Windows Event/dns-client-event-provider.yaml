@@ -46,9 +46,9 @@ outcomes:
     errors as Not all query parsed or Invalid operator.
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
-  a).
-analyst_notes: >
+  values are strings and field names are case sensitive. DNS-Client uses Ipaddress (lowercase
+  a), not IpAddress.
+analyst_notes: |
   These logs include client side operations and resolution activities for DNS.
   Event ID 1014 - Name resolution for the name [hostname] timed out after none of the configured DNS servers responded.
   Event ID 8015 - The system failed to register host (A or AAAA) resource records (RRs) for a network adapter.

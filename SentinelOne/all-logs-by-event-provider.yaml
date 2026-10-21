@@ -23,8 +23,8 @@ query: >
   | WHERE
     event.provider=="Syslog-SentinelOne"
 expected_result: >
-  A few dozen records a day: threat detections, mitigation actions (kill, quarantine), and
-  analyst status and verdict changes.
+  A handful to a few dozen records a day (1 and 23 on two test days): threat detections,
+  mitigation actions (kill, quarantine), and analyst status and verdict changes.
 outcomes:
   rows: >
     SentinelOne alerts are reaching the SIEM. event.code identifies the activity, for example 19

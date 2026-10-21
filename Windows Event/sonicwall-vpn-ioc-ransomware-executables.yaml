@@ -58,7 +58,6 @@ outcomes:
     errors as Not all query parsed or Invalid operator.
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
-  a).
+  values are strings and field names are case sensitive.
 analyst_notes: >
   Ransomware executables and data staging tools posted on Huntress blog as IOCs.

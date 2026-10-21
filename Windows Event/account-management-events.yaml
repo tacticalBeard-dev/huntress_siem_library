@@ -53,9 +53,8 @@ outcomes:
     errors as Not all query parsed or Invalid operator.
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
-  a).
-analyst_notes: >
+  values are strings and field names are case sensitive.
+analyst_notes: |
   These logs are all related to User and Group Account Management.
   Event ID 4720 - A user account was created.
   Event ID 4722 - A user account was enabled.

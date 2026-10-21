@@ -50,9 +50,10 @@ outcomes:
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
 known_limits: >
-  Covers one UTC day per search; run it once per day for a longer period. On SSL-VPN events the
-  remote client IP is in source.ip (and fortigate.dst); fortigate.src is empty.
-analyst_notes: >
+  Covers one UTC day per search; run it once per day for a longer period. The remote client IP
+  for SSL-VPN tunnels is in fortigate.dst (kept by this query) and source.ip; fortigate.src is
+  empty.
+analyst_notes: |
   Event Code 39948 - SSL tunnel shutdown
   Event Code 39947 - SSL tunnel established (tunnel established)
   Event Code 39424 - SSL VPN user tunnel up (login successful)

@@ -62,4 +62,4 @@ analyst_notes: >
   prioritize those for immediate response. On SSL-VPN events the remote client IP is in
   source.ip (FortiGate also writes it to fortigate.dst); fortigate.src is empty. Cross-
   reference high-failure source IPs against threat intelligence feeds and check for
-  corresponding successful SSL-VPN tunnel events using the sslvpn tunnel info query.
+  corresponding successful SSL-VPN tunnel events using sslvpn-tunnel-info.yaml.

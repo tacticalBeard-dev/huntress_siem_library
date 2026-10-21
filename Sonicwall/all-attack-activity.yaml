@@ -70,7 +70,7 @@ outcomes:
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period. These events depend on
   the firewall's attack logging category being sent to syslog.
-analyst_notes: >
+analyst_notes: |
   22 = Ping of Death Blocked (Ping of death dropped)
   23 = IP Spoof Detected (IP spoof dropped)
   27 = Land Attack (Land attack dropped)

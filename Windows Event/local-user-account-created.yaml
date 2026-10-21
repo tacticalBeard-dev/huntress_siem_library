@@ -1,4 +1,4 @@
-title: New Local User Account Created
+title: New User Account Created
 id: 2db0e395-5954-409d-827f-50c2e1d647be
 status: Production
 description: >
@@ -52,12 +52,12 @@ outcomes:
     errors as Not all query parsed or Invalid operator.
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
-  a).
+  values are strings and field names are case sensitive.
 analyst_notes: >
   Pair with Event 4732 (added to local Administrators group) to detect the full attacker
   workflow - create account then elevate it. SubjectUserName is the account that performed
   the action. SYSTEM-initiated account creation by a non-administrative process is especially
   suspicious. Filter known deployment or imaging tools that create accounts as part of build
-  processes to reduce noise. Note that the broader account management events query also
-  captures 4720 alongside other account lifecycle events.
+  processes to reduce noise. Event 4720 covers local accounts on any host and domain
+  accounts on domain controllers. account-management-events.yaml also captures 4720 alongside
+  other account lifecycle events.

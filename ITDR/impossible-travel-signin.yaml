@@ -2,11 +2,10 @@ title: Impossible Travel - Sign-In from Multiple Source IPs
 id: 1f3a59c9-9a55-4f1c-948e-afc36de68a8f
 status: Production
 description: >
-  Identifies Entra ID sign-in events where the same user authenticates from multiple
-  distinct source IPs within a short time window which may indicate account compromise
-  via credential theft or token reuse. This query surfaces users with sign-ins from
-  multiple IPs in a given period as a hunting starting point. Use it to prioritize
-  accounts for deeper investigation rather than as a standalone alert.
+  Identifies Entra ID users who signed in from multiple distinct source IPs on the same UTC day,
+  which may indicate account compromise via credential theft or token reuse. Use it as a hunting
+  starting point to prioritize accounts for deeper investigation rather than as a standalone
+  alert.
 author: tacticalbeard-dev
 date: 2026/05/02
 modified: 2026/10/20

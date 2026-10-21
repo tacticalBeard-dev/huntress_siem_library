@@ -58,8 +58,7 @@ outcomes:
     errors as Not all query parsed or Invalid operator.
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
-  a).
+  values are strings and field names are case sensitive.
 analyst_notes: >
   This fires on Domain Controllers only as Event 4768 is only logged on DCs. Status 0x0
   means the TGT was successfully issued. Combine with 4624 Logon Type 9 (NewCredentials)

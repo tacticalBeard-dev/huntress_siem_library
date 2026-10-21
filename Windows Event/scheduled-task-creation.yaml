@@ -40,8 +40,8 @@ query: >
       winlog.event_data.TaskName,
       winlog.event_data.TaskContent
 expected_result: >
-  Tens of thousands of task creations a day across a set of hosts; software updaters create
-  many.
+  High volume: about 177,000 task creations across all tested tenants on the test day; software
+  updaters create many.
 outcomes:
   rows: >
     Each row is a new scheduled task. Look at TaskContent for actions calling cmd, powershell,
@@ -54,8 +54,7 @@ outcomes:
     errors as Not all query parsed or Invalid operator.
 known_limits: >
   Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
-  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
-  a).
+  values are strings and field names are case sensitive.
 analyst_notes: >
   The TaskContent field contains the full XML of the task. Look for actions referencing
   cmd.exe, powershell.exe, wscript.exe, or mshta.exe combined with encoded arguments
