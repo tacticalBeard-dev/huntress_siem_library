@@ -1,0 +1,64 @@
+title: Service Installed
+id: 4f2d6c5d-1fa4-4519-91d4-10dc02d4bc3e
+status: Production
+description: >
+  List new Windows services (System log 7045), rarest first. Attackers install services to run
+  tools like PsExec, remote access software and ransomware with SYSTEM rights.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://attack.mitre.org/techniques/T1543/003/"
+  - "https://attack.mitre.org/techniques/T1569/002/"
+  - "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259"
+tags:
+  - attack.t1543.003
+  - attack.t1569.002
+  - attack.persistence
+  - attack.execution
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Service Control Manager"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Service Control Manager"
+      AND event.code==7045
+  | STATS
+      installs = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY winlog.event_data.ServiceName, winlog.event_data.ImagePath, winlog.event_data.AccountName
+  | SORT
+      installs ASC
+expected_result: >
+  Many installs in a large environment, mostly drivers and software updates.
+outcomes:
+  rows: >
+    Rarest services come first. Look for image paths in user-writable folders (Temp, AppData,
+    ProgramData, Users\Public), cmd.exe or powershell.exe in the path, random-looking service
+    names, PsExec (PSEXESVC), and remote access tools (ScreenConnect, AnyDesk, Atera, Splashtop,
+    SimpleHelp, TeamViewer, NetSupport, RustDesk, MeshAgent) that the organization doesn't use.
+    To see which hosts, rerun as a raw search with AND winlog.event_data.ServiceName=="<name>"
+    and KEEP host.hostname.
+  empty: >
+    No services were installed in this window, which is unlikely across many hosts. Check the
+    System log is collected for these hosts.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. Sorted rarest first, so the rare installs
+  are the ones shown. Security log event 4697 records the same installs when Audit Security
+  System Extension is on; this query uses the System log, which needs no audit policy.
+analyst_notes: >
+  ImagePath can hold a whole command line, including encoded PowerShell. A service whose path
+  runs cmd /c or powershell -enc is almost never legitimate.

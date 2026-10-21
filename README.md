@@ -105,9 +105,10 @@ The exact `event.provider` value for each source, the fields the queries use, an
 
 | Item | Detail |
 |---|---|
-| Providers | `Microsoft-Windows-Security-Auditing`, `Microsoft-Windows-DNS-Client`, `Microsoft-Windows-HttpService`. Service installs (7045) come from `Service Control Manager`. |
+| Providers | `Microsoft-Windows-Security-Auditing`, `Microsoft-Windows-DNS-Client`, `Microsoft-Windows-HttpService`, `Service Control Manager` (System log, service installs 7045), `Microsoft-Windows-Eventlog` (log cleared 104 and 1102), `Microsoft-Windows-PowerShell` (script blocks 4104), `Quick Assist`, `ScreenConnect` (client events 100 connect, 101 disconnect, 201 file transfer) |
 | Common fields | `event.code` (numeric; quoted and unquoted both work), `host.hostname`, `user.name`, `winlog.event_data.*` (string values) |
-| Traps | Field names are case sensitive (`winlog.event_data.Ipaddress` on DNS-Client). Many events only exist when the matching audit policy is on; each query's `outcomes.empty` names the setting. |
+| More fields | 7045: `winlog.event_data.ServiceName`, `.ImagePath`, `.AccountName`, `.StartType`. 4104: `winlog.event_data.ScriptBlockText`, `.Path`. ScreenConnect: `winlog.event_data.RelayServer`, `.InstanceFingerprint`, `event.action`. Logon type (`winlog.event_data.LogonType`) is a string: match `"10"`, not `10`. Process creation (4688) isn't collected in most environments, so command lines come from PowerShell 4104 instead. |
+| Traps | Field names are case sensitive (`winlog.event_data.Ipaddress` on DNS-Client). Quick Assist events carry only the host and time (blank message, no event data). Many events only exist when the matching audit policy is on; each query's `outcomes.empty` names the setting. |
 
 ## Find a query
 
@@ -201,21 +202,30 @@ The exact `event.provider` value for each source, the fields the queries use, an
 
 | Query | Use it to |
 |---|---|
+| [account-lockouts.yaml](Windows%20Event/account-lockouts.yaml) | Rank AD account lockouts (4740) by account and caller |
 | [account-logon-failed.yaml](Windows%20Event/account-logon-failed.yaml) | List failed logons (4625) |
 | [account-management-events.yaml](Windows%20Event/account-management-events.yaml) | List accounts created, enabled, disabled, deleted |
+| [admin-password-reset.yaml](Windows%20Event/admin-password-reset.yaml) | List passwords reset by another account (4724) |
 | [dns-client-event-provider.yaml](Windows%20Event/dns-client-event-provider.yaml) | Troubleshoot DNS client problems |
+| [event-log-cleared.yaml](Windows%20Event/event-log-cleared.yaml) | Find event logs being cleared (104, 1102) |
 | [event-provider-by-hostname.yaml](Windows%20Event/event-provider-by-hostname.yaml) | See all Security events from one host |
 | [events-from-a-specific-process.yaml](Windows%20Event/events-from-a-specific-process.yaml) | See Security events naming one process |
 | [gpo-changes.yaml](Windows%20Event/gpo-changes.yaml) | List directory and Group Policy object changes |
 | [httpservice-event-provider.yaml](Windows%20Event/httpservice-event-provider.yaml) | List HTTP.sys configuration changes |
 | [kerberoasting-rc4-service-ticket-request.yaml](Windows%20Event/kerberoasting-rc4-service-ticket-request.yaml) | Find RC4 service tickets (Kerberoasting) |
+| [kerberos-preauth-failures.yaml](Windows%20Event/kerberos-preauth-failures.yaml) | Rank IPs by accounts failing Kerberos pre-auth (4771) |
 | [key-storage-provider.yaml](Windows%20Event/key-storage-provider.yaml) | List key storage operations |
 | [local-user-account-created.yaml](Windows%20Event/local-user-account-created.yaml) | List new user accounts (4720) |
 | [overpass-the-hash-rc4-tgt-request.yaml](Windows%20Event/overpass-the-hash-rc4-tgt-request.yaml) | Find RC4 TGT requests (overpass-the-hash) |
 | [pass-the-hash-ntlm-network-logon-zero-key.yaml](Windows%20Event/pass-the-hash-ntlm-network-logon-zero-key.yaml) | Find NTLM network logons with key length 0 |
+| [powershell-suspicious-script-block.yaml](Windows%20Event/powershell-suspicious-script-block.yaml) | Find download cradles and Defender tampering in PowerShell (4104) |
 | [privileged-group-membership-change.yaml](Windows%20Event/privileged-group-membership-change.yaml) | List members added to security groups |
+| [quick-assist-activity-by-host.yaml](Windows%20Event/quick-assist-activity-by-host.yaml) | List hosts where Quick Assist ran |
+| [rdp-logons.yaml](Windows%20Event/rdp-logons.yaml) | Summarize RDP logons (4624 type 10) |
 | [registry-key-modification.yaml](Windows%20Event/registry-key-modification.yaml) | Find Run and RunOnce key changes |
 | [scheduled-task-creation.yaml](Windows%20Event/scheduled-task-creation.yaml) | List new scheduled tasks |
+| [screenconnect-relay-servers.yaml](Windows%20Event/screenconnect-relay-servers.yaml) | List ScreenConnect relay servers, rarest first |
+| [service-installed.yaml](Windows%20Event/service-installed.yaml) | List new services (7045), rarest first |
 | [sonicwall-vpn-ioc-driver-installed-by-attacker.yaml](Windows%20Event/sonicwall-vpn-ioc-driver-installed-by-attacker.yaml) | Sweep for published attacker drivers |
 | [sonicwall-vpn-ioc-ransomware-executables.yaml](Windows%20Event/sonicwall-vpn-ioc-ransomware-executables.yaml) | Sweep for published attacker tools |
 | [sonicwall-vpn-ioc-user-created-by-attacker.yaml](Windows%20Event/sonicwall-vpn-ioc-user-created-by-attacker.yaml) | Sweep for published attacker account names |
@@ -236,8 +246,11 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Password spraying or brute force | [entra-password-spray-by-ip.yaml](ITDR/entra-password-spray-by-ip.yaml), [entra-account-lockouts.yaml](ITDR/entra-account-lockouts.yaml), [entra-user-login-invalid-username-or-password.yaml](ITDR/entra-user-login-invalid-username-or-password.yaml), [ssl-vpn-auth-failure-spike.yaml](Fortigate/ssl-vpn-auth-failure-spike.yaml), [account-logon-failed.yaml](Windows%20Event/account-logon-failed.yaml) |
 | An exposed firewall admin interface | [admin-logins-on-any-interface.yaml](Fortigate/admin-logins-on-any-interface.yaml), [admin-login-from-external-ip.yaml](Fortigate/admin-login-from-external-ip.yaml), [admin-wan-login.yaml](Sonicwall/admin-wan-login.yaml) |
 | A firewall firmware change | [firmware-version-change.yaml](Fortigate/firmware-version-change.yaml) |
-| A new account or privilege change | [account-management-events.yaml](Windows%20Event/account-management-events.yaml), [privileged-group-membership-change.yaml](Windows%20Event/privileged-group-membership-change.yaml) |
-| Persistence on a Windows host | [scheduled-task-creation.yaml](Windows%20Event/scheduled-task-creation.yaml), [registry-key-modification.yaml](Windows%20Event/registry-key-modification.yaml) |
+| A new account or privilege change | [account-management-events.yaml](Windows%20Event/account-management-events.yaml), [privileged-group-membership-change.yaml](Windows%20Event/privileged-group-membership-change.yaml), [admin-password-reset.yaml](Windows%20Event/admin-password-reset.yaml) |
+| Persistence on a Windows host | [scheduled-task-creation.yaml](Windows%20Event/scheduled-task-creation.yaml), [registry-key-modification.yaml](Windows%20Event/registry-key-modification.yaml), [service-installed.yaml](Windows%20Event/service-installed.yaml) |
+| RDP brute force or lateral movement | [rdp-logons.yaml](Windows%20Event/rdp-logons.yaml), [account-logon-failed.yaml](Windows%20Event/account-logon-failed.yaml), [kerberos-preauth-failures.yaml](Windows%20Event/kerberos-preauth-failures.yaml), [account-lockouts.yaml](Windows%20Event/account-lockouts.yaml) |
+| Remote access tool abuse or help desk scam | [screenconnect-relay-servers.yaml](Windows%20Event/screenconnect-relay-servers.yaml), [quick-assist-activity-by-host.yaml](Windows%20Event/quick-assist-activity-by-host.yaml), [service-installed.yaml](Windows%20Event/service-installed.yaml) |
+| Ransomware precursors (new services, PowerShell, cleared logs) | [service-installed.yaml](Windows%20Event/service-installed.yaml), [powershell-suspicious-script-block.yaml](Windows%20Event/powershell-suspicious-script-block.yaml), [event-log-cleared.yaml](Windows%20Event/event-log-cleared.yaml) |
 | Kerberos or NTLM credential abuse | [kerberoasting-rc4-service-ticket-request.yaml](Windows%20Event/kerberoasting-rc4-service-ticket-request.yaml), [overpass-the-hash-rc4-tgt-request.yaml](Windows%20Event/overpass-the-hash-rc4-tgt-request.yaml), [pass-the-hash-ntlm-network-logon-zero-key.yaml](Windows%20Event/pass-the-hash-ntlm-network-logon-zero-key.yaml) |
 | An IOC sweep | [entra-user-activity-by-actor-ip-address.yaml](ITDR/entra-user-activity-by-actor-ip-address.yaml), [sonicwall-vpn-ioc-login-by-ip.yaml](Sonicwall/sonicwall-vpn-ioc-login-by-ip.yaml) |
 | The ConnectWise Cloud Backup (SkyKick) compromise, October 2026 | [connectwise-cloud-backup-ioc-ip-sweep.yaml](ITDR/connectwise-cloud-backup-ioc-ip-sweep.yaml), [connectwise-cloud-backup-ioc-ip-detail.yaml](ITDR/connectwise-cloud-backup-ioc-ip-detail.yaml), [connectwise-cloud-backup-app-id-sweep.yaml](ITDR/connectwise-cloud-backup-app-id-sweep.yaml), [connectwise-skykick-app-name-search.yaml](ITDR/connectwise-skykick-app-name-search.yaml), then [entra-persistence-operation-inventory.yaml](ITDR/entra-persistence-operation-inventory.yaml) |

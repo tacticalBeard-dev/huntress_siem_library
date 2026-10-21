@@ -1,0 +1,59 @@
+title: Event Log Cleared
+id: 7c00b8fa-01d1-457a-8333-671007463242
+status: Production
+description: >
+  Find Windows event logs being cleared (104 for System and other logs, 1102 for the Security
+  log). Clearing logs is a common step right before or after ransomware deployment.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://attack.mitre.org/techniques/T1070/001/"
+  - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-1102"
+  - "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor"
+tags:
+  - attack.t1070.001
+  - attack.defense_evasion
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-Eventlog"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Eventlog"
+      AND event.code IN (104, 1102)
+  | KEEP
+      @timestamp,
+      event.code,
+      host.hostname,
+      user.id,
+      message
+expected_result: >
+  A few rows, mostly admins and software clearing logs during maintenance.
+outcomes:
+  rows: >
+    Each row is one cleared log on one host. A clear on several hosts within minutes, a clear of
+    the Security log, or a clear on a server outside a change window is the priority. Check what
+    ran on the host just before (service-installed.yaml, powershell-suspicious-script-
+    block.yaml).
+  empty: >
+    No logs were cleared in this window, which is normal. Log clears are rare outside
+    maintenance.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Events from the cleared log written before the clear may never have reached
+  the SIEM if the clear happened quickly. 104 rows don't name which log was cleared in a
+  separate field; read the message.
+analyst_notes: >
+  1102 is written to the Security log itself, so it survives the clear. 104 is written to the
+  System log for every other log cleared.

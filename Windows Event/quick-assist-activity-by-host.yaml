@@ -1,0 +1,60 @@
+title: Quick Assist Activity by Host
+id: ea65fb4d-10f6-47ea-ade9-986be134c9e7
+status: Production
+description: >
+  List hosts where Microsoft Quick Assist wrote events, with first and last time seen. Help desk
+  impersonation scams use Quick Assist to get an attacker onto a user's screen.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://www.microsoft.com/en-us/security/blog/2024/05/15/threat-actors-misusing-quick-assist-in-social-engineering-attacks-leading-to-ransomware/"
+  - "https://attack.mitre.org/techniques/T1219/"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259"
+tags:
+  - attack.t1219
+  - attack.command_and_control
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Quick Assist"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Quick Assist"
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY host.hostname
+  | SORT
+      last_seen DESC
+expected_result: >
+  Hosts that ran Quick Assist, most recent first. A host can log many events in one session, so
+  expect few hosts with high counts.
+outcomes:
+  rows: >
+    A host that rarely uses Quick Assist, or one where the user reported a call from "IT
+    support" or a flood of spam email, is the priority. Check the host's other activity around
+    last_seen: new services (service-installed.yaml), PowerShell (powershell-suspicious-script-
+    block.yaml) and other remote access tools.
+  empty: >
+    No Quick Assist events in this window. The host must forward the Quick Assist event log;
+    many environments don't.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. Quick Assist writes these to the
+  Application log with event ID 0, and Huntress keeps no message, raw event or event data for
+  them, so the query can show that Quick Assist wrote events on a host and when, not who
+  connected or for how long.
+analyst_notes: >
+  If your organization doesn't use Quick Assist, Microsoft recommends removing or blocking it;
+  any row then deserves a look.

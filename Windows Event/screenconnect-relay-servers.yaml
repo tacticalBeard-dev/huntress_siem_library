@@ -1,0 +1,63 @@
+title: ScreenConnect Relay Servers
+id: 6bd46843-54b5-4d01-b246-d0cfff7810e9
+status: Production
+description: >
+  List the ScreenConnect relay servers that client hosts connected to, rarest first. An
+  unfamiliar relay means a ScreenConnect instance your organization doesn't control, a common
+  way attackers keep remote access.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://www.huntress.com/blog/rogue-screenconnect-installations"
+  - "https://attack.mitre.org/techniques/T1219/"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259"
+tags:
+  - attack.t1219
+  - attack.command_and_control
+  - attack.persistence
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ScreenConnect"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ScreenConnect"
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY winlog.event_data.RelayServer, event.action
+  | SORT
+      events ASC
+expected_result: >
+  One row per relay server and action (screenconnect-connect, screenconnect-disconnect,
+  screenconnect-file-transfer). Most environments see one or two relays, their own.
+outcomes:
+  rows: >
+    Any relay server that isn't your organization's or your MSP's ScreenConnect instance is the
+    priority, especially on cloud-hosted trial domains. A screenconnect-file-transfer row on an
+    unfamiliar relay means files moved over that session. Rerun as a raw search with AND
+    winlog.event_data.RelayServer=="<relay>" and KEEP host.hostname, user.name to see which
+    hosts.
+  empty: >
+    No ScreenConnect events in this window. The host must forward the ScreenConnect client's
+    event log.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Only hosts with the ScreenConnect client installed write these events; other
+  remote access tools need their own checks (service-installed.yaml finds new installs of any of
+  them).
+analyst_notes: >
+  event.code 100 is a connect, 101 a disconnect and 201 a file transfer.
+  winlog.event_data.InstanceFingerprint identifies the ScreenConnect instance and stays the same
+  when the relay hostname changes.

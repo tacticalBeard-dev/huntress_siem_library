@@ -1,0 +1,60 @@
+title: RDP Logons
+id: 5ad6ae99-8d76-4bb0-98e9-94f80bce9139
+status: Production
+description: >
+  Summarize successful Remote Desktop logons (4624, logon type 10) by host, account and source
+  IP. Attackers use RDP to move between hosts and to come in through exposed RDP.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4624"
+  - "https://attack.mitre.org/techniques/T1021/001/"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259"
+tags:
+  - attack.t1021.001
+  - attack.lateral_movement
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+      AND event.code==4624
+      AND winlog.event_data.LogonType=="10"
+  | STATS
+      logons = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY host.hostname, winlog.event_data.TargetUserName, winlog.event_data.IpAddress
+  | SORT
+      logons DESC
+expected_result: >
+  Mostly admins and remote workers on known hosts.
+outcomes:
+  rows: >
+    One row per host, account and source IP. Check source IPs that are public (RDP exposed to
+    the internet), accounts that don't normally use RDP, one account hopping across many hosts,
+    and logons outside working hours. Pair with account-logon-failed.yaml on the same host to
+    spot a brute force followed by a success.
+  empty: >
+    No RDP logons were recorded in this window. Logon auditing (Audit Logon, success) must be
+    on, and the host's Security log must be collected.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. RDP sessions that reconnect log as type 7
+  (unlock/reconnect), not 10. Logons through an RD Gateway show the gateway's IP. IpAddress can
+  be - or 127.0.0.1 for local tunnels. LogonType is a string, so it's matched as "10".
+analyst_notes: >
+  Logon type 10 is RemoteInteractive (Terminal Services or Remote Desktop). Type 3 network
+  logons from the same source just before a type 10 are normal (Network Level Authentication).
