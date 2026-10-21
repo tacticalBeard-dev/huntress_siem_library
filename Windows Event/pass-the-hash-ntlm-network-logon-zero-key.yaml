@@ -33,7 +33,7 @@ query: >
   from logs
   | WHERE
       event.provider=="Microsoft-Windows-Security-Auditing"
-      AND event.code=="4624"
+      AND event.code==4624
   | WHERE
       winlog.event_data.LogonType=="3"
       AND winlog.event_data.AuthenticationPackageName=="NTLM"

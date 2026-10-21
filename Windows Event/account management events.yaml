@@ -33,12 +33,7 @@ query: >
   | WHERE 
       event.provider=="Microsoft-Windows-Security-Auditing" 
   | WHERE 
-      event.code=="4720" 
-      OR event.code=="4722" 
-      OR event.code=="4725" 
-      OR event.code=="4726" 
-      OR event.code=="4741" 
-      OR  event.code=="4743" 
+      event.code IN (4720, 4722, 4725, 4726, 4741, 4743)
   | KEEP 
       host.hostname, 
       event.code, 

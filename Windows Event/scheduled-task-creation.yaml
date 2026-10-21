@@ -34,7 +34,7 @@ query: >
   from logs
   | WHERE
       event.provider=="Microsoft-Windows-Security-Auditing"
-      AND event.code=="4698"
+      AND event.code==4698
   | KEEP
       host.hostname,
       winlog.event_data.SubjectUserName,

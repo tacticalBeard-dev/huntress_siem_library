@@ -25,7 +25,7 @@ query: >
   | WHERE 
       event.provider=="Microsoft-Windows-Security-Auditing" 
   | WHERE 
-      event.code=="5136" 
+      event.code==5136 
   | KEEP 
       host.hostname, 
       user.name, 

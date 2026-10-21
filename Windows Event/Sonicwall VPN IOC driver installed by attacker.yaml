@@ -30,7 +30,7 @@ query: >
   | WHERE 
       event.provider=="Microsoft-Windows-Security-Auditing" 
   | WHERE 
-      event.code=="4697" 
+      event.code==4697 
   | WHERE 
       winlog.event_data.ServiceName=="rwdrv.sys"
       or
