@@ -1,11 +1,11 @@
 title: Authorization Failure
-id: null
+id: ce313bf5-c9db-4890-b1f4-fb634fba8e68
 status: Production
 description: >
   Find all logs where the event provider is equal to Duo and the result is denied.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/articles/36516946793107-API-Cisco-Duo"
   - "https://duo.com/docs/adminapi"
@@ -17,10 +17,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Cisco Duo
-analyst_notes: >
-  This will give you a good idea of location and frequency for denied authorization requests which can indicate unwanted access attempts.  
-  It could also indicate legitimate user attempts to access authorized resources which could lead to proactive intervention and less end user friction.
+  provider: "Duo"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -36,3 +37,21 @@ query: >
       duo.event_type,
       duo.reason,
       duo.result
+expected_result: >
+  A few denied authentications on a normal day, mostly no_response or user_cancelled.
+outcomes:
+  rows: >
+    Each row is a denied authentication with its reason, application and access device location.
+    Repeated denials for one user, or from an unfamiliar location, are worth following up.
+  empty: >
+    No denied Duo authentications on this UTC day.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. duo.result values are
+  lowercase (success, denied, fraud); == is case sensitive. Location fields are blank on some
+  records.
+analyst_notes: >
+  This will give you a good idea of location and frequency for denied authorization requests which can indicate unwanted access attempts.  
+  It could also indicate legitimate user attempts to access authorized resources which could lead to proactive intervention and less end user friction.

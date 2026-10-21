@@ -1,5 +1,5 @@
 title: Duo Authentication Failure Spike - Single User
-id: null
+id: e183ffb6-b8a2-4fc9-91d2-be2f57db20d4
 status: Production
 description: >
   Detects a high volume of Duo authentication failures (denied or fraud) for a single user and
@@ -7,7 +7,7 @@ description: >
   valid credentials.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1110/"
   - "https://duo.com/docs/adminapi#authentication-logs"
@@ -18,14 +18,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Cisco Duo
-analyst_notes: >
-  Duo records the outcome in duo.result (success, denied, fraud) and the cause in duo.reason
-  (for example no_response, user_cancelled, invalid_passcode). A bypass code login is a success
-  with duo.reason "bypass_user", not a failure result, so it is not counted here; review those
-  separately on every occurrence. For failure spikes, cross-reference the source IP against threat
-  intelligence. Failures from multiple locations for the same user (a high unique_ips count) point
-  to credential stuffing from many sources rather than a single attacker.
+  provider: "Duo"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -40,3 +37,26 @@ query: >
       failure_count >= 5
   | SORT
       failure_count DESC
+expected_result: >
+  Usually zero or a few rows: users with five or more denied or fraud results for one
+  application.
+outcomes:
+  rows: >
+    Each row is a user and application with failure_count denials and unique_ips source IPs,
+    highest count first. A high unique_ips count points to attempts from many sources.
+  empty: >
+    No user reached five failures for one application on this UTC day. Lower the threshold for
+    small tenants.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Bypass code use is a
+  success, not a failure, so it is not counted here.
+analyst_notes: >
+  Duo records the outcome in duo.result (success, denied, fraud) and the cause in duo.reason
+  (for example no_response, user_cancelled, invalid_passcode). A bypass code login is a success
+  with duo.reason "bypass_user", not a failure result, so it is not counted here; review those
+  separately on every occurrence. For failure spikes, cross-reference the source IP against threat
+  intelligence. Failures from multiple locations for the same user (a high unique_ips count) point
+  to credential stuffing from many sources rather than a single attacker.

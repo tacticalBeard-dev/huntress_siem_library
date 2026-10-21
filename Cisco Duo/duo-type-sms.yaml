@@ -1,11 +1,11 @@
 title: Duo Type SMS
-id: null
+id: fafc9cf2-3122-41d7-b262-381c8c071993
 status: Production
 description: >
   Find all logs where the event provider is equal to Duo and the result type is SMS.
 author: tacticalbeard-dev
 date: 2025/06/24
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://support.huntress.io/hc/en-us/articles/36516946793107-API-Cisco-Duo"
   - "https://duo.com/docs/adminapi"
@@ -17,9 +17,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Cisco Duo
-analyst_notes: >
-  This will identify when SMS is used to provide authentication which is considered a weak form of secondary authentication.
+  provider: "Duo"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -30,3 +32,20 @@ query: >
       event.category,
       duo.type,
       duo.phone
+expected_result: >
+  A few telephony records on a normal day where users receive SMS passcodes.
+outcomes:
+  rows: >
+    Each row is an SMS sent by Duo. SMS is a weak second factor; users on it are candidates to
+    move to push or a hardware token.
+  empty: >
+    No SMS passcodes were sent on this UTC day.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. These are telephony
+  records, so they carry no user or result; match them to authentications by time to see who
+  used SMS. duo.type values are lowercase.
+analyst_notes: >
+  This will identify when SMS is used to provide authentication which is considered a weak form of secondary authentication.
