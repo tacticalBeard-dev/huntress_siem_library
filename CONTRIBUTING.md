@@ -44,7 +44,7 @@ query: >
   | SORT
       events DESC
 expected_result: >
-  What a normal day returns, with a rough volume if you know it.
+  What a normal run returns, described in general terms (for example a handful of rows a day).
 outcomes:
   rows: >
     What a row means and what to do next.
@@ -95,7 +95,7 @@ If something behaves differently from the README, open an issue with the query, 
 - [ ] `logsource.provider` is an exact `event.provider` value.
 - [ ] Every `<placeholder>` in the query is listed under `placeholders`.
 - [ ] No `limit`, no `%` in `LIKE`, no search on `message`.
-- [ ] Tested in Huntress SIEM against a known row, read after Done; the PR description gives the window and what came back (counts only).
+- [ ] Tested in Huntress SIEM against a known row, read after Done; the PR description says whether it returned rows. No counts, volumes or other details about your own environment, and no client data.
 - [ ] `outcomes.empty` says when empty isn't clean.
 - [ ] No client names, company names, real users, emails, hostnames, IPs, tenant IDs, session IDs or alert titles anywhere, including examples.
 - [ ] No em or en dashes.

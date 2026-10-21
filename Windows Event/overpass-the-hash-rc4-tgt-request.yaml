@@ -25,11 +25,9 @@ logsource:
   platform: Huntress SIEM
   provider: "Microsoft-Windows-Security-Auditing"
 picker: >
-  Any window works: Huntress reads the whole picker range, newest first, in 4-hour steps. Wide
-  ranges take longer (29 days of a small source and 14 days of a very large one each took about
-  7 to 9 minutes in testing). Results are complete only once the grid shows Done. Raw results
-  load 100 rows at a time as you scroll; scroll until the grid shows Done before treating a
-  short or empty result as complete.
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
 placeholders: []
 query: >
   from logs
