@@ -1,0 +1,56 @@
+title: Authorization Success
+id: 91d3a655-08ea-40e1-a73b-5c49e1b071d0
+status: Production
+description: >
+  Find all logs where the event provider is equal to Duo and the result is success.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/36516946793107-API-Cisco-Duo"
+  - "https://duo.com/docs/adminapi"
+tags:
+  - attack.t1078
+  - attack.initial_access
+  - cisco.duo
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Duo"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Duo"
+      AND duo.result=="success"
+  | KEEP
+      duo.access_device.ip,
+      duo.access_device.location.city,
+      duo.access_device.location.state,
+      duo.access_device.location.country,
+      duo.application.name,
+      duo.email,
+      duo.event_type,
+      duo.reason,
+      duo.result
+expected_result: >
+  Most Duo authentications on any day; approved pushes (user_approved) are the largest group.
+outcomes:
+  rows: >
+    Each row is a successful authentication. Use it to learn each user's normal locations and
+    devices before hunting for outliers.
+  empty: >
+    No successful Duo authentications on this UTC day, which is unusual; check the picker and
+    that Duo logs are arriving.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. A bypass code login is
+  also a success, with duo.reason bypass_user; filter on that reason to review them.
+analyst_notes: >
+  This will give you a good idea of location and frequency for successful authorization requests which can help to identify a legitimate baseline for your users.  
+  You can use this information to detect impossible travel and abnormal location based behavior.

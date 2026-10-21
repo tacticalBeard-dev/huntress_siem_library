@@ -1,0 +1,53 @@
+title: ENTRA User Activity by Actor IP Address
+id: fad77420-5e1e-4091-83b8-b31f7afde6af
+status: Production
+description: >
+  Summarize all ITDR activity from one IP address, checking every field an ITDR record can carry the IP in.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+tags:
+  - attack.t1078.004
+  - attack.initial_access
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders:
+  - "<ip>: the IPv4 or IPv6 address to look up, for example 203.0.113.10"
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND (source.ip=="<ip>" OR itdr.ClientIP=="<ip>" OR itdr.ActorIpAddress=="<ip>")
+  | STATS
+      events = COUNT(*)
+      BY itdr.ClientIP, itdr.Operation, itdr.UserId
+  | SORT
+      events DESC
+expected_result: >
+  One row per account and operation seen from that IP, with a count, highest count first.
+outcomes:
+  rows: >
+    The IP was used on this UTC day. Any UserLoggedIn row from a known-bad IP is the priority
+    row.
+  empty: >
+    The IP wasn't seen in ITDR records on this UTC day. Check the address for typos; IPv6 must
+    be written exactly as the logs record it. Records of app-only directory changes carry no IP
+    at all.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Anonymous Microsoft
+  Forms responses are logged with IP 0.0.0.0, so that address matches many unrelated rows.
+analyst_notes: >
+  Sign-in records carry the IP in itdr.ClientIP, itdr.ActorIpAddress and source.ip; other
+  workloads may carry it in only one of them, so the query checks all three. Useful for
+  verifying trusted IPs or sweeping an IOC.

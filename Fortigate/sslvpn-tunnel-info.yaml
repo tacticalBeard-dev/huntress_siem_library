@@ -1,0 +1,58 @@
+title: SSLVPN Tunnel Info
+id: b98cf048-afb1-426c-8970-075a91fc2dfd
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Fortigate and the event codes are informational SSLVPN tunnel events.
+author: tacticalbeard-dev
+date: 2025/06/26
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
+tags:
+  - attack.t1133
+  - attack.initial_access
+  - fortigate
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Fortigate"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+  | WHERE
+      event.code IN (39424, 39947, 39948)
+  | KEEP
+      host.hostname,
+      event.code,
+      event.name,
+      fortigate.FTNTFGTtunnelid,
+      fortigate.duser,
+      fortigate.dst,
+      fortigate.FTNTFGTtunnelip,
+      fortigate.FTNTFGTduration,
+      fortigate.out,
+      fortigate.in
+expected_result: >
+  A few tunnel up and down events per day per firewall with remote users.
+outcomes:
+  rows: >
+    Each row is an SSL-VPN tunnel event with user, tunnel IP, duration and bytes. Pair 39424 or
+    39947 (up) with 39948 (down) by tunnel ID to see sessions.
+  empty: >
+    No SSL-VPN tunnels on this UTC day.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. On SSL-VPN events the
+  remote client IP is in source.ip (and fortigate.dst); fortigate.src is empty.
+analyst_notes: >
+  Event Code 39948 - SSL tunnel shutdown
+  Event Code 39947 - SSL tunnel established (tunnel established)
+  Event Code 39424 - SSL VPN user tunnel up (login successful)

@@ -1,0 +1,73 @@
+title: Sonicwall VPN IOC login by IP
+id: 8ef9aa1d-710b-4f2d-bb7b-03f1d3362a36
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-SonicWall and source ip equals IOC reported by Huntress blog.
+author: tacticalbeard-dev
+date: 2025/08/18
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35348612546067-Starter-Queries-Sonicwall-Firewall"
+  - "https://www.sonicwall.com/techdocs/pdf/sonicos-6-5-1-log-events-reference-guide.pdf"
+  - "https://www.sonicwall.com/support/technical-documentation/docs/nsm-system_events/Content/nsm-system-events.htm"
+  - "https://www.huntress.com/blog/exploitation-of-sonicwall-vpn"
+tags:
+  - attack.t1078
+  - attack.t1133
+  - attack.initial_access
+  - sonicwall
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-SonicWall"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SonicWall"
+  | WHERE
+      source.ip=="42.252.99.59"
+      or
+      source.ip=="45.86.208.240"
+      or
+      source.ip=="77.247.126.239"
+      or
+      source.ip=="104.238.205.105"
+      or
+      source.ip=="104.238.220.216"
+      or
+      source.ip=="181.215.182.64"
+      or
+      source.ip=="193.239.236.149"
+      or
+      source.ip=="194.33.45.155"
+  | KEEP
+      host.ip,
+      sonicwall.sn,
+      event.code,
+      source.ip,
+      sonicwall.usr,
+      sonicwall.sess,
+      message
+expected_result: >
+  Nothing, unless a firewall saw traffic from one of the published attacker IPs.
+outcomes:
+  rows: >
+    A firewall saw one of the attacker IPs. Treat it as an incident: check what the IP did
+    (event.code, sonicwall.usr) and whether any login succeeded.
+  empty: >
+    None of the listed IPs reached a SonicWall on this UTC day. Run it across every day of the
+    period you care about; one day doesn't cover the campaign.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. The IP list is a
+  snapshot of the published IOCs; attackers rotate infrastructure.
+analyst_notes: >
+  Attacker IPs posted on the Huntress blog as IOCs. The query matches these IPs on every
+  SonicWall log type, not only logins.

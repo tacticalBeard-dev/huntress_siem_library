@@ -1,5 +1,5 @@
 title: Privileged Group Membership Change
-id: null
+id: 27bfc45b-81a1-4b23-b74e-ddb44998f005
 status: Production
 description: >
   Detects additions to Active Directory security groups using Events 4728 (global
@@ -10,7 +10,7 @@ description: >
   privilege escalation phase to establish persistence.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1098/"
   - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4728"
@@ -22,14 +22,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Windows Event
-analyst_notes: >
-  All three event IDs cover different group scopes — use them together to avoid gaps.
-  TargetUserName is the GROUP that was modified. MemberName is the ACCOUNT that was added
-  and will appear in LDAP format such as CN=username,OU=Users,DC=domain,DC=com. Changes
-  made by automated provisioning systems at predictable times can be baselined and filtered.
-  Focus on changes outside business hours or by accounts that do not normally perform
-  provisioning tasks.
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -44,3 +41,26 @@ query: >
       winlog.event_data.MemberName,
       winlog.event_data.TargetUserName,
       winlog.event_data.TargetDomainName
+expected_result: >
+  A few hundred group membership additions a day across a set of domains.
+outcomes:
+  rows: >
+    Each row is a member added to a security group: TargetUserName is the group, MemberName the
+    account added.
+  empty: >
+    No group membership additions on this UTC day. Empty is not clean unless Audit Security
+    Group Management is enabled on the domain controllers and member servers.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  All three event IDs cover different group scopes - use them together to avoid gaps.
+  TargetUserName is the GROUP that was modified. MemberName is the ACCOUNT that was added
+  and will appear in LDAP format such as CN=username,OU=Users,DC=domain,DC=com. Changes
+  made by automated provisioning systems at predictable times can be baselined and filtered.
+  Focus on changes outside business hours or by accounts that do not normally perform
+  provisioning tasks.

@@ -1,0 +1,49 @@
+title: All Logs by Hostname
+id: 679752b9-44ac-47dd-a998-fb65c5cff2b7
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Meraki.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/41181137671827-API-Cisco-Meraki-Cloud"
+  - "https://support.huntress.io/hc/en-us/articles/38958950569107-Syslog-Cisco-Meraki-MX-Security-Appliance"
+  - "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/Syslog_Event_Types_and_Log_Samples"
+tags:
+  - meraki
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Meraki"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Meraki"
+  | KEEP
+      host.hostname,
+      host.ip
+expected_result: >
+  Every Meraki MX syslog record for the day; content filtering blocks are usually most of it.
+outcomes:
+  rows: >
+    Meraki syslog is reaching the SIEM. Open a row to see the meraki.* fields for building other
+    queries.
+  empty: >
+    No Meraki syslog arrived for this UTC day. Check the MX syslog server settings before
+    treating anything as clean.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. This covers Meraki MX
+  syslog (Syslog-Meraki), not the separate Meraki cloud API integration.
+analyst_notes: >
+  This will give you a good starting point for finding the raw logs.
+  You can use this information to verify logs are being ingested and retained.
+  The raw logs will also assist with creating other queries.

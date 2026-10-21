@@ -1,0 +1,64 @@
+title: Sonicwall VPN IOC ransomware executables
+id: 5b690090-a5e2-42b1-883e-3d3089977c8d
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and process name IOC reported by Huntress blog.
+author: tacticalbeard-dev
+date: 2025/08/18
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+  - "https://www.huntress.com/blog/exploitation-of-sonicwall-vpn"
+tags:
+  - attack.t1486
+  - attack.t1036.005
+  - attack.impact
+  - attack.defense_evasion
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE 
+      event.provider=="Microsoft-Windows-Security-Auditing" 
+  | WHERE 
+      winlog.event_data.ProcessName == "win.exe"
+      or
+      winlog.event_data.ProcessName == "C:\\ProgramData\\winrar.exe"
+      or
+      winlog.event_data.ProcessName == "C:\\ProgramData\\OpenSSHa.msi"
+      or
+      winlog.event_data.ProcessName == "C:\\Program Files\\OpenSSH\\sshd.exe"
+      or
+      winlog.event_data.ProcessName == "C:\\programdata\\ssh\\cloudflared.exe"
+      or
+      winlog.event_data.ProcessName == "C:\\Program Files\\FileZilla FTP Client\\fzsftp.exe"
+      or
+      winlog.event_data.ProcessName == "C:\\ProgramData\\1.bat"
+      or
+      winlog.event_data.ProcessName == "C:\\ProgramData\\2.bat"
+expected_result: >
+  Nothing, unless a host ran one of the published attacker tools.
+outcomes:
+  rows: >
+    A host ran one of the attacker tools from the published IOCs. Treat it as an incident.
+  empty: >
+    None of the listed executables appear on this UTC day. Empty is not clean unless Audit
+    Process Creation (or another subcategory that records ProcessName) is enabled. Paths are
+    matched exactly; renamed or relocated tools won't match.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  Ransomware executables and data staging tools posted on Huntress blog as IOCs.

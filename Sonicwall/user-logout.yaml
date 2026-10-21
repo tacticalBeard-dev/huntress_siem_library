@@ -1,0 +1,62 @@
+title: User Logout
+id: d1cf4715-d78c-454c-9181-ba8d7f259191
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-SonicWall and the event codes equals 263 User VPN Logout, 264 User Logout Max Session or 265 User Logout Timer Expire.
+author: tacticalbeard-dev
+date: 2025/07/02
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35348612546067-Starter-Queries-Sonicwall-Firewall"
+  - "https://www.sonicwall.com/techdocs/pdf/sonicos-6-5-1-log-events-reference-guide.pdf"
+  - "https://www.sonicwall.com/support/technical-documentation/docs/nsm-system_events/Content/nsm-system-events.htm"
+tags:
+  - attack.t1078
+  - sonicwall
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-SonicWall"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SonicWall"
+  | WHERE
+      event.code==263
+      OR event.code==264
+      OR event.code==265
+  | KEEP
+      host.ip,
+      sonicwall.sn,
+      event.code,
+      source.ip,
+      sonicwall.usr,
+      sonicwall.sess,
+      message
+expected_result: >
+  User VPN logouts (263), max-session logouts (264) and timer-expired logouts (265) for the day,
+  when the Authentication Access category is sent to syslog.
+outcomes:
+  rows: >
+    Each row is a user session ending. Pair it with the matching login to see session length.
+  empty: >
+    No matching events on this UTC day. Empty is not proof nothing happened: these events only
+    reach the SIEM when the firewall's syslog includes the Authentication Access log category,
+    and none were seen from any client across four test days.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. sonicwall.sess was
+  empty in testing. host.hostname is never populated for SonicWall; use sonicwall.sn (serial) or
+  host.ip to identify the firewall.
+analyst_notes: >
+  263 = User VPN Logout (Authentication Access)
+  264 = User Logout - Max Session (Authentication Access)
+  265 = User Logout - Timer Expire (Authentication Access)
+  These events reach the SIEM only when the firewall's syslog includes the Authentication Access log category.

@@ -1,5 +1,5 @@
 title: FortiGate Admin Login from External IP
-id: null
+id: ac0892f9-c789-4be5-be82-3adf62fa5a18
 status: Production
 description: >
   Detects successful FortiGate administrative logins (Event code 32001) originating from
@@ -10,7 +10,7 @@ description: >
   was involved.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1078/"
   - "https://www.cisa.gov/news-events/cybersecurity-advisories/aa22-377a"
@@ -23,14 +23,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Syslog-Fortigate
-analyst_notes: >
-  Event code 32001 is Admin Logon Success. RFC 1918 private ranges (10.0.0.0/8,
-  172.16.0.0/12, 192.168.0.0/16) should be the only source IPs for admin logins. Any
-  login from a public IP should be treated as a critical alert. Refine the source IP
-  exclusions to match your actual management subnets for accuracy. Check the FortiGate
-  config change log immediately following any flagged login to determine what was accessed
-  or modified.
+  provider: "Syslog-Fortigate"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -46,3 +43,27 @@ query: >
       fortigate.FTNTFGTmethod,
       fortigate.outcome,
       event.code
+expected_result: >
+  Nothing. Successful admin logins should only come from private management networks.
+outcomes:
+  rows: >
+    Each row is a successful admin login from a public IP. Treat it as critical: confirm who
+    logged in, then review the configuration change log right after the login.
+  empty: >
+    No successful admin logins from public IPs on this UTC day. Failed attempts (event 32002)
+    aren't included; check them separately, since a firewall receiving them has its management
+    interface exposed to the internet.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Private ranges are
+  excluded with CIDR_MATCH on fortigate.src; adjust the list if your management networks use
+  other ranges.
+analyst_notes: >
+  Event code 32001 is Admin Logon Success. RFC 1918 private ranges (10.0.0.0/8,
+  172.16.0.0/12, 192.168.0.0/16) should be the only source IPs for admin logins. Any
+  login from a public IP should be treated as a critical alert. Refine the source IP
+  exclusions to match your actual management subnets for accuracy. Check the FortiGate
+  config change log immediately following any flagged login to determine what was accessed
+  or modified.

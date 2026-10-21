@@ -1,5 +1,5 @@
-title: Impossible Travel — Sign-In from Multiple Source IPs
-id: null
+title: Impossible Travel - Sign-In from Multiple Source IPs
+id: 1f3a59c9-9a55-4f1c-948e-afc36de68a8f
 status: Production
 description: >
   Identifies Entra ID sign-in events where the same user authenticates from multiple
@@ -9,7 +9,7 @@ description: >
   accounts for deeper investigation rather than as a standalone alert.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1078/004/"
   - "https://learn.microsoft.com/en-us/entra/id-protection/concept-identity-protection-risks"
@@ -20,17 +20,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: ITDR
-analyst_notes: >
-  Entra ID Protection natively detects impossible travel as a risk signal (risk event
-  type: impossibleTravel) and is a more reliable source for automated alerting. Use this
-  query for proactive hunting when reviewing sign-in patterns. Filter out known VPN exit
-  nodes and users who legitimately travel frequently. A high ip_count with a corresponding
-  high login_count from the same user is worth investigating — check itdr.ClientIP values
-  for geographic diversity and compare against the user's normal sign-in baseline.
-  A Huntress search reads only the last UTC day of the picker window, so this query covers
-  one UTC day no matter how wide the picker is. To look at a longer period, run it once per
-  UTC day (picker 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST).
+  provider: "ITDR"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -44,3 +38,27 @@ query: >
       ip_count >= 2
   | SORT
       ip_count DESC
+expected_result: >
+  Many accounts with two or more sign-in IPs on any day; mobile carriers and IPv6 address
+  rotation account for most of them.
+outcomes:
+  rows: >
+    Each row is an account with ip_count distinct sign-in IPs and login_count sign-ins, highest
+    ip_count first. Use it to pick accounts to look at, not as a verdict.
+  empty: >
+    No account signed in from more than one IP on this UTC day, which would be unusual; check
+    the picker first.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Distinct IPs aren't
+  distinct locations: IPv6 rotation and mobile networks inflate ip_count. The query has no
+  geography; compare itdr.ClientIP values in the raw sign-ins.
+analyst_notes: >
+  Entra ID Protection natively detects impossible travel as a risk signal (risk event type:
+  impossibleTravel) and is a more reliable source for automated alerting. Use this query for
+  proactive hunting when reviewing sign-in patterns. Filter out known VPN exit nodes and users
+  who legitimately travel frequently. A high ip_count with a corresponding high login_count from
+  the same user is worth investigating; check itdr.ClientIP values for geographic diversity and
+  compare against the user's normal sign-in baseline.

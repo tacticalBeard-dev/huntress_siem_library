@@ -1,5 +1,5 @@
 title: MFA Push Fatigue - Repeated Denials Followed by Approval
-id: null
+id: 3c230b39-5380-43eb-9db6-7fbe9a0ca765
 status: Production
 description: >
   Detects potential MFA push fatigue attacks by identifying Duo Push authentication
@@ -10,7 +10,7 @@ description: >
   results indicate a user-reported suspicious push.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1621/"
   - "https://duo.com/blog/mfa-fatigue-attacks"
@@ -21,16 +21,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Cisco Duo
-analyst_notes: >
-  Each row is one user and one result, with its count and first and last time seen. Duo push
-  factors are duo_push and verified_duo_push (lowercase). Results are denied (user rejected or
-  didn't respond), fraud (user reported the push as suspicious) and success (approved). The pattern
-  to investigate is a user with several denied or fraud rows and a success row whose last_seen is
-  after the denials' first_seen (an approval that came during or after the burst of denials). For
-  any user that fits, pivot to that user's raw Duo rows for the day to see the order of pushes and
-  compare the approving IP and device with the denials; a location change between denial and
-  approval is strong additional evidence of account compromise.
+  provider: "Duo"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -45,3 +40,27 @@ query: >
       BY duo.email, duo.result
   | SORT
       duo.email ASC
+expected_result: >
+  One row per user and result for every push that day; most users have only a success row.
+outcomes:
+  rows: >
+    Look for users with denied or fraud rows plus a success row whose last_seen is after the
+    denials' first_seen. On the test day 9 users had both.
+  empty: >
+    No Duo push authentications on this UTC day, which is unusual for a tenant that uses push.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. The summary shows
+  counts and times, not the order of individual pushes or which IP approved; pivot to that
+  user's raw rows for that.
+analyst_notes: >
+  Each row is one user and one result, with its count and first and last time seen. Duo push
+  factors are duo_push and verified_duo_push (lowercase). Results are denied (user rejected or
+  didn't respond), fraud (user reported the push as suspicious) and success (approved). The pattern
+  to investigate is a user with several denied or fraud rows and a success row whose last_seen is
+  after the denials' first_seen (an approval that came during or after the burst of denials). For
+  any user that fits, pivot to that user's raw Duo rows for the day to see the order of pushes and
+  compare the approving IP and device with the denials; a location change between denial and
+  approval is strong additional evidence of account compromise.

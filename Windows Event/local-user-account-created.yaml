@@ -1,16 +1,16 @@
 title: New Local User Account Created
-id: null
+id: 2db0e395-5954-409d-827f-50c2e1d647be
 status: Production
 description: >
   Detects creation of a new local user account via Event 4720. While domain accounts are
   the norm in managed environments, attackers frequently create local accounts as a
   persistence mechanism to maintain access even if domain credentials are reset. A new
-  local account created by a non-IT process or outside of a known provisioning window —
-  especially followed by Event 4732 (addition to local Administrators group) — is a
+  local account created by a non-IT process or outside of a known provisioning window -
+  especially followed by Event 4732 (addition to local Administrators group) - is a
   significant indicator of compromise.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1136/001/"
   - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4720"
@@ -21,14 +21,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Windows Event
-analyst_notes: >
-  Pair with Event 4732 (added to local Administrators group) to detect the full attacker
-  workflow — create account then elevate it. SubjectUserName is the account that performed
-  the action. SYSTEM-initiated account creation by a non-administrative process is especially
-  suspicious. Filter known deployment or imaging tools that create accounts as part of build
-  processes to reduce noise. Note that the broader account management events query also
-  captures 4720 alongside other account lifecycle events.
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -41,3 +38,26 @@ query: >
       winlog.event_data.TargetUserName,
       winlog.event_data.SamAccountName,
       winlog.event_data.DisplayName
+expected_result: >
+  A few hundred account creations a day across a set of domains and endpoints.
+outcomes:
+  rows: >
+    Each row is a new account (4720). Local accounts created on workstations or servers,
+    especially by SYSTEM, are worth checking.
+  empty: >
+    No accounts were created on this UTC day. Empty is not clean unless Audit User Account
+    Management is enabled on the hosts and domain controllers.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  Pair with Event 4732 (added to local Administrators group) to detect the full attacker
+  workflow - create account then elevate it. SubjectUserName is the account that performed
+  the action. SYSTEM-initiated account creation by a non-administrative process is especially
+  suspicious. Filter known deployment or imaging tools that create accounts as part of build
+  processes to reduce noise. Note that the broader account management events query also
+  captures 4720 alongside other account lifecycle events.

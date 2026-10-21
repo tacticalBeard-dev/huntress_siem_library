@@ -1,0 +1,66 @@
+title: ENTRA User Login Strong Auth Enrollment Required
+id: 8dc88d19-d69c-4115-a8a5-b5e3c025f344
+status: Production
+description: >
+  Find all logs where the event provider is equal to ITDR and the logon error is interrupted due to one of the Strong Auth Requirements.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+  - "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"
+tags:
+  - attack.t1621
+  - attack.t1556.006
+  - attack.credential_access
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+  | WHERE
+      itdr.LogonError IN ("UserStrongAuthEnrollmentRequiredInterrupt", "UserStrongAuthClientAuthNRequiredInterrupt", "UserStrongAuthClientAuthNRequired", "UserStrongAuthExpired", "UserStrongAuthEnrollmentRequired")
+  | KEEP
+      itdr.Operation,
+      itdr.UserKey,
+      itdr.UserId,
+      itdr.ClientIP,
+      itdr.DeviceProperties.OS,
+      itdr.DeviceProperties.BrowserType,
+      itdr.DeviceProperties.IsCompliant,
+      itdr.LogonError
+expected_result: >
+  Rows on any normal day, mostly UserStrongAuthClientAuthNRequiredInterrupt (an MFA prompt
+  during sign-in).
+outcomes:
+  rows: >
+    Each row is a sign-in interrupted for MFA or MFA registration. The interrupt values are
+    routine; a burst of them for one account from an unfamiliar IP is worth a look.
+  empty: >
+    No MFA interrupts on this UTC day, which is unusual for tenants that enforce MFA.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Device fields
+  (itdr.DeviceProperties.*) are only populated on sign-in records, so they can be blank on other
+  rows. UserStrongAuthEnrollmentRequired wasn't seen in testing but is a documented Microsoft
+  value.
+analyst_notes: >
+  One of the following conditions is true:
+  1. UserStrongAuthEnrollmentRequiredInterrupt - User needs to enroll for second factor authentication (interactive).
+  2. UserStrongAuthClientAuthNRequiredInterrupt - Strong authentication is required and the user did not pass the MFA challenge.
+  3. UserStrongAuthClientAuthNRequired - Due to a configuration change made by the admin such as a Conditional Access policy, per-user enforcement, or because you moved to a new location, the user must use multifactor authentication to access the resource. 
+  Retry with a new authorize request for the resource.
+  4. UserStrongAuthExpired- Presented multifactor authentication has expired due to policies configured by your administrator. 
+  You must refresh your multifactor authentication to access '{resource}'.
+  5. UserStrongAuthEnrollmentRequired - Due to a configuration change made by the admin such as a Conditional Access policy, per-user enforcement, or because the user moved to a new location, the user is required to use multifactor authentication. 
+  Either a managed user needs to register security info to complete multifactor authentication, or a federated user needs to get the multifactor claim from the federated identity provider.

@@ -1,5 +1,5 @@
-title: Kerberoasting — RC4 Service Ticket Request
-id: null
+title: Kerberoasting - RC4 Service Ticket Request
+id: 1cd4b231-aa8f-4747-b7b6-675db7db591e
 status: Production
 description: >
   Detects potential Kerberoasting activity by identifying Kerberos service ticket
@@ -10,7 +10,7 @@ description: >
   auditing to be enabled.
 author: tacticalbeard-dev
 date: 2026/05/02
-modified: 2026/05/02
+modified: 2026/10/20
 references:
   - "https://attack.mitre.org/techniques/T1558/003/"
   - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769"
@@ -22,13 +22,11 @@ tags:
 logsource:
   language: ESQL
   platform: Huntress SIEM
-  type: Windows Event
-analyst_notes: >
-  Filter out computer accounts (ending in $) and the krbtgt service as these are normal.
-  Focus on service accounts where tickets are requested from a workstation IP rather than
-  from a DC. A spike of RC4 requests against multiple service accounts from a single
-  source IP in a short window is high confidence Kerberoasting. Verify audit policy is
-  enabled with: auditpol /get /subcategory:"Kerberos Service Ticket Operations"
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
 query: >
   from logs
   | WHERE
@@ -45,3 +43,25 @@ query: >
       winlog.event_data.IpPort,
       winlog.event_data.TicketEncryptionType,
       winlog.event_data.Status
+expected_result: >
+  Some RC4 service tickets on a normal day where legacy systems still use RC4.
+outcomes:
+  rows: >
+    Each row is a service ticket issued with RC4. Many RC4 tickets for different service
+    accounts from one IP in a short time is likely Kerberoasting.
+  empty: >
+    No RC4 service tickets on this UTC day. 4769 is only logged on domain controllers with Audit
+    Kerberos Service Ticket Operations enabled, so empty is not clean without it.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  Filter out computer accounts (ending in $) and the krbtgt service as these are normal.
+  Focus on service accounts where tickets are requested from a workstation IP rather than
+  from a DC. A spike of RC4 requests against multiple service accounts from a single
+  source IP in a short window is high confidence Kerberoasting. Verify audit policy is
+  enabled with: auditpol /get /subcategory:"Kerberos Service Ticket Operations"

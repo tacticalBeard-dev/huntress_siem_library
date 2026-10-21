@@ -1,0 +1,47 @@
+title: Events from a Specific Process
+id: 8dedb6d2-0c13-4490-9134-1d3c51e6061d
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the process name matches a path.
+author: tacticalbeard-dev
+date: 2025/07/14
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+tags:
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders:
+  - "<process path>: the full executable path, with each backslash written twice"
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+  | WHERE
+      winlog.event_data.ProcessName == "<process path>"
+expected_result: >
+  Every Security-Auditing event that names that process for the day.
+outcomes:
+  rows: >
+    The process appears in Security events (logons, object access, handle requests). Use it to
+    trace what one executable did.
+  empty: >
+    No Security events name that process on this UTC day. The match is exact and case sensitive;
+    copy the path from an existing row.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  Example value for the placeholder: C:\\Program Files
+  (x86)\\Microsoft\\Edge\\Application\\msedge.exe (each backslash doubled inside the quotes).

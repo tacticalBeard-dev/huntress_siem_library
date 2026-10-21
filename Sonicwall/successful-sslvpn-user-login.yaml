@@ -1,0 +1,62 @@
+title: Successful SSLVPN User Login
+id: 53a6405b-96bf-45c2-8b2c-4d1d94445397
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-SonicWall and the event codes equals 1080 Successful SSL VPN User Login.
+author: tacticalbeard-dev
+date: 2025/07/02
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35348612546067-Starter-Queries-Sonicwall-Firewall"
+  - "https://www.sonicwall.com/techdocs/pdf/sonicos-6-5-1-log-events-reference-guide.pdf"
+  - "https://www.sonicwall.com/support/technical-documentation/docs/nsm-system_events/Content/nsm-system-events.htm"
+tags:
+  - attack.t1078
+  - attack.t1133
+  - attack.initial_access
+  - sonicwall
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-SonicWall"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SonicWall"
+  | WHERE
+      event.code==1080
+  | KEEP
+      host.ip,
+      sonicwall.sn,
+      event.code,
+      source.ip,
+      sonicwall.usr,
+      sonicwall.sess,
+      message
+expected_result: >
+  Successful SSL-VPN user logins (1080) for the day, when the Authentication Access category is
+  sent to syslog.
+outcomes:
+  rows: >
+    Each row is a successful SSL-VPN login. Compare source IPs with the user's normal locations.
+  empty: >
+    No matching events on this UTC day. Empty is not proof nothing happened: these events only
+    reach the SIEM when the firewall's syslog includes the Authentication Access log category,
+    and none were seen from any client across four test days.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. sonicwall.sess was
+  empty in testing. host.hostname is never populated for SonicWall; use sonicwall.sn (serial) or
+  host.ip to identify the firewall.
+analyst_notes: >
+  1080 = Successful SSL VPN User Login (Authentication Access)
+  Failed VPN logins could be an indication of targeted or random bruteforce attempts.
+  It is also an indication of a potentially exposed VPN attack vector when source is not trusted location.
+  These events reach the SIEM only when the firewall's syslog includes the Authentication Access log category.

@@ -1,0 +1,55 @@
+title: ENTRA Find All Events in a Browser Session
+id: fb877d26-7071-47ec-98e8-0d96a50ba3ff
+status: Production
+description: >
+  Find every ITDR record that shares one browser session ID, across every account that used that session.
+author: tacticalbeard-dev
+date: 2025/06/24
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+  - "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"
+tags:
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders:
+  - "<session id lowercase>: the session.id from a sign-in row (also shown as itdr.DeviceProperties.SessionId), lowercased, for example a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND TO_LOWER(session.id)=="<session id lowercase>"
+  | KEEP
+      @timestamp,
+      itdr.UserId,
+      itdr.UserKey,
+      itdr.Operation,
+      itdr.ErrorNumber,
+      source.ip,
+      itdr.ExtendedProperties.Value
+expected_result: >
+  Every ITDR record carrying that browser session ID, usually a sign-in followed by the activity
+  in that session, often from one account.
+outcomes:
+  rows: >
+    Each row is one record in the session. More than one account in the results means several
+    accounts used the same browser profile, which is how a shared or hijacked session shows up.
+  empty: >
+    The session ID wasn't seen on this UTC day, or it was typed wrong. Copy the ID from a row in
+    the same UTC day before treating an empty result as meaningful.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. Only about 40 percent
+  of ITDR records carry a session ID; records without one can't be found this way.
+analyst_notes: >
+  The query lowercases session.id so casing in the source record doesn't matter. Do not search
+  the message field for IDs: it holds only a one-line summary and never contains user IDs, IPs
+  or session IDs.

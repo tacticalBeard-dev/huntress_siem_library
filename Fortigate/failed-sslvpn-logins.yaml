@@ -1,0 +1,59 @@
+title: Failed SSLVPN Logins
+id: f7afc0e0-d926-4888-8414-4365b837d5fc
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Fortigate and the event code is 39426 (SSL-VPN login failed).
+author: tacticalbeard-dev
+date: 2025/06/26
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/35776541248275-Starter-Queries-FortiGate-Firewall"
+tags:
+  - attack.t1110
+  - attack.t1133
+  - attack.credential_access
+  - attack.initial_access
+  - fortigate
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Fortigate"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+  | WHERE
+      event.code==39426
+  | KEEP
+      host.hostname,
+      event.code,
+      source.ip,
+      fortigate.duser,
+      fortigate.dst,
+      fortigate.reason
+expected_result: >
+  Thousands of rows on any day where SSL-VPN faces the internet; most are automated password
+  guessing.
+outcomes:
+  rows: >
+    Each row is a failed SSL-VPN login with the user tried and the remote IP. Many users from
+    one IP is spraying; many IPs against one user is a targeted attack.
+  empty: >
+    No failed SSL-VPN logins on this UTC day, either because SSL-VPN isn't enabled or nothing
+    tried.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. On SSL-VPN events the
+  remote client IP is in source.ip (and fortigate.dst); fortigate.src is empty.
+analyst_notes: >
+  Failed SSLVPN logins could be an indication of targeted or random bruteforce attempts.
+  It is also an indication of a potentially exposed SSLVPN attack vector when source is not trusted location.
+  Event code 39426 is LOG_ID_EVENT_SSL_VPN_USER_SSL_LOGIN_FAIL. The remote client IP is
+  in source.ip (also fortigate.dst); fortigate.src is empty on SSL-VPN events.

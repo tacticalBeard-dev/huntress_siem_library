@@ -1,0 +1,56 @@
+title: Registry Key Modification
+id: fd6a620a-0458-4a3c-9fb3-86b40e15b8d5
+status: Production
+description: >
+  Find all logs where a specific registry key has been modified. This query targets keys under the 'Run' registry path, which are often used for persistence.
+author: tacticalbeard-dev
+date: 2025/09/22
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+tags:
+  - attack.t1547.001
+  - attack.persistence
+  - attack.privilege_escalation
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | where event.provider == "Microsoft-Windows-Security-Auditing"
+  | where event.code == 4657
+  | where winlog.event_data.ObjectName LIKE "*\\CurrentVersion\\Run*"
+  | keep
+    winlog.event_data.SubjectUserName,
+    winlog.event_data.ObjectName,
+    winlog.event_data.ProcessName,
+    winlog.event_data.NewValue
+expected_result: >
+  Usually nothing; no Run key changes were seen in testing.
+outcomes:
+  rows: >
+    Each row is a change under a Run or RunOnce key. Check the new value (NewValue) and the
+    process that wrote it.
+  empty: >
+    No Run key changes on this UTC day. Empty is not proof: 4657 is only logged for keys with an
+    auditing rule (SACL) and with Audit Registry enabled.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  Event 4657 (a registry value was modified) for any key under ...\CurrentVersion\Run, which covers
+  Run and RunOnce in both HKLM (\REGISTRY\MACHINE) and HKCU (\REGISTRY\USER). Run keys are a common
+  persistence technique. Windows only logs 4657 for keys that have an auditing rule (SACL) with
+  Audit Registry enabled, so add a SACL on the Run keys for this query to return anything. In the
+  query pattern each \\ matches one backslash and * is the wildcard.

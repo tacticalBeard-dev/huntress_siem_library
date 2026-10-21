@@ -1,0 +1,53 @@
+title: All Security Alerts
+id: 45430cb3-fd74-4684-8a6c-bf2ac841a735
+status: Production
+description: >
+  Find all logs where the event provider is equal to Syslog-Meraki and the event type is related to security.
+author: tacticalbeard-dev
+date: 2025/06/26
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Huntress-Managed-SIEM-Log-Search-Guide"
+  - "https://support.huntress.io/hc/en-us/articles/41181137671827-API-Cisco-Meraki-Cloud"
+  - "https://support.huntress.io/hc/en-us/articles/38958950569107-Syslog-Cisco-Meraki-MX-Security-Appliance"
+  - "https://documentation.meraki.com/General_Administration/Monitoring_and_Reporting/Syslog_Event_Types_and_Log_Samples"
+tags:
+  - attack.t1046
+  - attack.t1498
+  - attack.discovery
+  - attack.impact
+  - meraki
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Meraki"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+    | WHERE
+        event.provider=="Syslog-Meraki"
+        AND meraki.event_type=="security_event"
+expected_result: >
+  IDS alerts and malware file scan results, when the Security events syslog role is enabled.
+outcomes:
+  rows: >
+    Each row is a Meraki security event. Use meraki.event_description to separate IDS alerts
+    from file scan results.
+  empty: >
+    No security events on this UTC day. Empty is not proof: security_event is only sent when the
+    MX syslog server has the Security events role enabled, and none of the tested clients sent
+    it.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period.
+analyst_notes: >
+  This can be used as a starter query for finding the right properties when creating your own queries.
+  All generic security events are filtered by this query and you can use the meraki.event_description to filter further.
+  meraki.event_type holds the Meraki syslog category. security_event (IDS alerts and malware file scans) is only sent
+  when the MX syslog server has the Security events role enabled; without it, only the events category arrives and
+  this query returns nothing.

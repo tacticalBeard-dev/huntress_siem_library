@@ -1,0 +1,56 @@
+title: Username is Administrator
+id: 78e2a4d4-af15-4620-878e-85cc9b3b68b4
+status: Production
+description: >
+  Find all logs where the event provider is equal to Microsoft-Windows-Security-Auditing and the username is equal to administrator.
+author: tacticalbeard-dev
+date: 2025/07/14
+modified: 2026/10/20
+references:
+  - "https://support.huntress.io/hc/en-us/articles/35217204475411-Starter-Queries-Windows-Security"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259-Collecting-Microsoft-Windows-Event-Logs"
+tags:
+  - attack.t1078.003
+  - attack.initial_access
+  - attack.defense_evasion
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  One UTC day: 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST. A search reads only
+  the last UTC day of the picker window, and a future end time returns nothing.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+  | WHERE
+      TO_LOWER(user.name) == "administrator"
+  | KEEP
+      event.code,
+      message,
+      host.hostname,
+      source.host.name,
+      user.name,
+      winlog.channel
+expected_result: >
+  Thousands of events a day for built-in administrator accounts across a set of hosts.
+outcomes:
+  rows: >
+    Each row is an event naming an administrator account, in any casing. Add an event.code
+    filter to narrow it.
+  empty: >
+    No events name an administrator account on this UTC day, which would be unusual.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Covers one UTC day per search; run it once per day for a longer period. winlog.event_data.*
+  values are strings and field names are case sensitive (DNS-Client uses Ipaddress, lowercase
+  a).
+analyst_notes: >
+  Every Security-Auditing event for an account named administrator, in any casing (Administrator,
+  ADMINISTRATOR). Add an event.code filter to narrow it, for example 4625 for failed logons or 4624
+  for successful ones.
