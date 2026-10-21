@@ -28,6 +28,9 @@ analyst_notes: >
   nodes and users who legitimately travel frequently. A high ip_count with a corresponding
   high login_count from the same user is worth investigating — check itdr.ClientIP values
   for geographic diversity and compare against the user's normal sign-in baseline.
+  A Huntress search reads only the last UTC day of the picker window, so this query covers
+  one UTC day no matter how wide the picker is. To look at a longer period, run it once per
+  UTC day (picker 20:00 to 19:59 Eastern during EDT, 19:00 to 18:59 during EST).
 query: >
   from logs
   | WHERE

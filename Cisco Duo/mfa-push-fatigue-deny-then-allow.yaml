@@ -26,10 +26,11 @@ analyst_notes: >
   Each row is one user and one result, with its count and first and last time seen. Duo push
   factors are duo_push and verified_duo_push (lowercase). Results are denied (user rejected or
   didn't respond), fraud (user reported the push as suspicious) and success (approved). The pattern
-  to investigate is a user with several denied or fraud rows and a success row whose first_seen is
-  after the denials' last_seen. Check whether the approval came from a different IP or device than
-  the denials; a location change between denial and approval is strong additional evidence of
-  account compromise.
+  to investigate is a user with several denied or fraud rows and a success row whose last_seen is
+  after the denials' first_seen (an approval that came during or after the burst of denials). For
+  any user that fits, pivot to that user's raw Duo rows for the day to see the order of pushes and
+  compare the approving IP and device with the denials; a location change between denial and
+  approval is strong additional evidence of account compromise.
 query: >
   from logs
   | WHERE
