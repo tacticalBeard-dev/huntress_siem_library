@@ -53,7 +53,8 @@ outcomes:
     Each row is an NTLM network logon with key length 0. Baseline known sources, then
     investigate new source IPs or accounts.
   empty: >
-    No matching logons on this UTC day.
+    No matching logons on this UTC day. Empty is not clean unless Audit Logon (Success) is
+    enabled on the target hosts.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.

@@ -33,8 +33,8 @@ query: >
       winlog.event_data.Ipaddress,
       winlog.event_data.ErrorCode
 expected_result: >
-  DNS client warnings from endpoints, mostly timeouts (1014) and failed DNS registration (8015,
-  8017).
+  DNS client warnings from endpoints, mostly failed DNS registration (8015, 8017), with
+  occasional name resolution timeouts (1014).
 outcomes:
   rows: >
     Each row is a DNS client event. Repeated 1014 timeouts on many hosts point to a DNS server

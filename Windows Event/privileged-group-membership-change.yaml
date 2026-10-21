@@ -48,7 +48,8 @@ outcomes:
     Each row is a member added to a security group: TargetUserName is the group, MemberName the
     account added.
   empty: >
-    No group membership additions on this UTC day.
+    No group membership additions on this UTC day. Empty is not clean unless Audit Security
+    Group Management is enabled on the domain controllers and member servers.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.

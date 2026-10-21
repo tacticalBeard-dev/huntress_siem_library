@@ -50,8 +50,9 @@ outcomes:
   rows: >
     A host ran one of the attacker tools from the published IOCs. Treat it as an incident.
   empty: >
-    None of the listed executables appear on this UTC day. Paths are matched exactly; renamed or
-    relocated tools won't match.
+    None of the listed executables appear on this UTC day. Empty is not clean unless Audit
+    Process Creation (or another subcategory that records ProcessName) is enabled. Paths are
+    matched exactly; renamed or relocated tools won't match.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.

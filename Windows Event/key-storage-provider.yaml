@@ -40,7 +40,8 @@ outcomes:
   rows: >
     Each row is a key operation with the user and key type.
   empty: >
-    No key storage events on this UTC day.
+    No key storage events on this UTC day. These events need Audit Other System Events enabled,
+    so empty is not clean without it.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.

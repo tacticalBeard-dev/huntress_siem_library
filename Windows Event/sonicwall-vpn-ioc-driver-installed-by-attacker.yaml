@@ -41,8 +41,9 @@ outcomes:
   rows: >
     A host installed rwdrv.sys or hlpdrv.sys as a service. Treat it as an incident.
   empty: >
-    Neither driver was installed as a service on this UTC day. Run it for every day of the
-    period you care about.
+    Neither driver was installed as a service on this UTC day. Empty is not clean unless Audit
+    Security System Extension is enabled (4697 isn't logged without it). Run it for every day of
+    the period you care about.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.

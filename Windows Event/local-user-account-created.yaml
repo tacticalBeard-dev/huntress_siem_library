@@ -45,7 +45,8 @@ outcomes:
     Each row is a new account (4720). Local accounts created on workstations or servers,
     especially by SYSTEM, are worth checking.
   empty: >
-    No accounts were created on this UTC day.
+    No accounts were created on this UTC day. Empty is not clean unless Audit User Account
+    Management is enabled on the hosts and domain controllers.
   error: >
     Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
     errors as Not all query parsed or Invalid operator.
