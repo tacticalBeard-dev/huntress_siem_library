@@ -1,0 +1,89 @@
+title: Suspicious PowerShell Script Block
+id: 01f5363a-49ec-4dae-ad5b-de079d3980e4
+status: Production
+description: >
+  Find PowerShell script blocks (4104) that download code, decode Base64, run strings as code,
+  tamper with AMSI or Defender, or load credential theft tools. These cover the download cradles
+  seen in most hands-on-keyboard intrusions.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://attack.mitre.org/techniques/T1059/001/"
+  - "https://attack.mitre.org/techniques/T1562/001/"
+  - "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logging_windows"
+  - "https://support.huntress.io/hc/en-us/articles/36005287194259"
+tags:
+  - attack.t1059.001
+  - attack.t1105
+  - attack.t1562.001
+  - attack.execution
+  - attack.defense_evasion
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-PowerShell"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. Raw results load 100 rows at a time as you scroll; scroll until the grid
+  shows Done before treating a short or empty result as complete.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-PowerShell"
+      AND event.code==4104
+  | WHERE
+      CONTAINS(winlog.event_data.ScriptBlockText, "DownloadString")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "DownloadFile")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "Net.WebClient")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "Invoke-WebRequest")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "Start-BitsTransfer")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "FromBase64String")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "Invoke-Expression")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "IEX(")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "| IEX")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "-EncodedCommand")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "AmsiUtils")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "Invoke-Mimikatz")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "-ExclusionPath")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "-ExclusionProcess")
+      OR CONTAINS(winlog.event_data.ScriptBlockText, "-DisableRealtimeMonitoring")
+  | KEEP
+      @timestamp,
+      host.hostname,
+      user.id,
+      winlog.event_data.Path,
+      winlog.event_data.ScriptBlockText
+expected_result: >
+  A small fraction of all script blocks, but still a lot of rows: management agents, installers
+  and admin scripts use the same commands (Invoke-WebRequest and FromBase64String most of all),
+  so expect to tune it for your environment.
+outcomes:
+  rows: >
+    Read winlog.event_data.ScriptBlockText. Downloads from raw IP addresses, paste sites or
+    file-sharing services, Base64 decoded and run in one line, AMSI bypass strings, and Defender
+    exclusions added outside your management tools are the priority. winlog.event_data.Path is
+    blank when the code was typed or passed on the command line rather than run from a script
+    file.
+  empty: >
+    No matching script blocks in this window. Script block logging (Turn on PowerShell Script
+    Block Logging, under Windows PowerShell in Group Policy) must be on, and the Microsoft-
+    Windows-PowerShell/Operational log collected.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. Matches are case-insensitive text searches. IEX is matched only as IEX( and
+  | IEX, because the bare letters match a large number of unrelated script blocks; other
+  spacings are missed. Obfuscated scripts can split these strings apart. Long scripts are split
+  across several 4104 events (MessageNumber of MessageTotal); only the part containing the match
+  is returned.
+analyst_notes: |
+  - DownloadString, DownloadFile, Net.WebClient, Invoke-WebRequest, Start-BitsTransfer: download cradles (T1105).
+  - FromBase64String, -EncodedCommand, Invoke-Expression, IEX: decode and run code in memory.
+  - AmsiUtils: AMSI bypass. -ExclusionPath, -ExclusionProcess, -DisableRealtimeMonitoring: Defender exclusions or turning protection off with Add-MpPreference or Set-MpPreference (T1562.001). Those cmdlets on their own run constantly from management tools, so only the risky parameters are matched.
+  - Invoke-Mimikatz: credential theft.
+  - To exclude a known management tool, add AND NOT CONTAINS(winlog.event_data.Path, "<path>") to the first WHERE.

@@ -1,0 +1,58 @@
+title: Account Lockouts
+id: 55886f41-8bff-4372-9b32-dcd0f0ed7620
+status: Production
+description: >
+  Rank Active Directory account lockouts (4740) by account and the computer the bad passwords
+  came from. A burst of lockouts points to password guessing or a stale saved credential.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4740"
+  - "https://attack.mitre.org/techniques/T1110/"
+  - "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor"
+tags:
+  - attack.t1110
+  - attack.credential_access
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+      AND event.code==4740
+  | STATS
+      lockouts = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY winlog.event_data.TargetUserName, winlog.event_data.TargetDomainName
+  | SORT
+      lockouts DESC
+expected_result: >
+  A few lockouts, mostly users with an old password saved on a phone or mapped drive.
+outcomes:
+  rows: >
+    winlog.event_data.TargetUserName is the locked account and
+    winlog.event_data.TargetDomainName is the caller computer (the machine the failed logons
+    came from, despite the field name). Many accounts locked from one caller computer, or an
+    admin account locked, is the priority.
+  empty: >
+    No lockouts in this window. 4740 is logged on domain controllers with Audit User Account
+    Management on.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The caller computer can be blank when the failures came over the network
+  from a non-domain source; check 4625 and 4771 on the domain controllers instead.
+analyst_notes: >
+  Pair with kerberos-preauth-failures.yaml and account-logon-failed.yaml over the same window to
+  find the source IP.

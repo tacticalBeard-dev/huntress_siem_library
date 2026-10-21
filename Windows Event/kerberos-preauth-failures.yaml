@@ -1,0 +1,62 @@
+title: Kerberos Pre-Authentication Failures by Source
+id: 4faf0f54-9720-4301-bf36-8091a2bad81f
+status: Production
+description: >
+  Rank source IPs by how many accounts failed Kerberos pre-authentication (4771) from them. Many
+  accounts failing from one IP is a password spray against Active Directory.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4771"
+  - "https://attack.mitre.org/techniques/T1110/003/"
+  - "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor"
+tags:
+  - attack.t1110.003
+  - attack.credential_access
+  - windows.event
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Microsoft-Windows-Security-Auditing"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Microsoft-Windows-Security-Auditing"
+      AND event.code==4771
+  | STATS
+      accounts = count_distinct(winlog.event_data.TargetUserName),
+      failures = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY winlog.event_data.IpAddress
+  | SORT
+      accounts DESC
+expected_result: >
+  Many failures in a large domain, mostly expired passwords and devices with old credentials,
+  each from a handful of IPs.
+outcomes:
+  rows: >
+    An IP with failures against many accounts is a spray; one account failing from many IPs is
+    usually a stale password on several devices. Look up the IP (internal hosts can show as
+    ::ffff:10.x.x.x style addresses), then check 4624 logons from it.
+  empty: >
+    No Kerberos pre-authentication failures in this window. 4771 is logged on domain controllers
+    with Audit Kerberos Authentication Service (failure) on.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  Some rows can carry an @timestamp outside the picker window; the picker doesn't filter on
+  @timestamp alone. The grid shows at most 1,000 rows. Sorted so the top is complete.
+  winlog.event_data.Status says why it failed (0x18 bad password, 0x12 account disabled, locked
+  or expired, 0x17 password expired); this query doesn't split by it. count_distinct is reliable
+  on account names but returned partial results on fields with tens of thousands of distinct
+  values.
+analyst_notes: >
+  Kerberos sprays don't produce 4625 failed logons, so this query catches what account-logon-
+  failed.yaml misses.
