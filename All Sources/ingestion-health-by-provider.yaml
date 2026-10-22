@@ -1,0 +1,57 @@
+title: Ingestion Health by Provider
+id: ad2160fe-7a50-4aaa-ade6-6361b0de742f
+status: Production
+description: >
+  Count events, distinct hosts and first and last time seen for every log source in one search,
+  so a source that stopped sending or slowed down stands out.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/30113222043155-Searching-Logs-ESQL"
+  - "https://support.huntress.io/hc/en-us/articles/32270678960531"
+tags:
+  - huntress.siem
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "any"
+picker: >
+  A day or less. This search reads every source, so wide windows are slow and can end with
+  Aggregation stopped early. Results are complete only once the grid shows Done.
+placeholders: []
+query: >
+  from logs
+  | STATS
+      events = COUNT(*),
+      hosts = COUNT_DISTINCT(host.hostname),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY event.provider
+  | SORT
+      last_seen ASC
+expected_result: >
+  One row per log source, stalest first. Busy sources (firewalls, ITDR, Windows Security) show
+  a last_seen within minutes of the window end.
+outcomes:
+  rows: >
+    Read from the top. A busy source whose last_seen is hours before the window end has stopped
+    or slowed: check the collector, the syslog forwarder or the integration in the Huntress
+    portal. Compare events and hosts with the same window on an earlier day to spot a source
+    that is still sending but from fewer hosts. Then run that source's all logs by hostname
+    query to find which host went quiet.
+  empty: >
+    No data at all for the window. Check the window isn't entirely in the future.
+  error: >
+    Check the query was pasted whole. Huntress reports parser errors as Not all query parsed or
+    Invalid operator.
+known_limits: >
+  A source that stopped sending before the window starts doesn't appear at all, so compare with
+  a window from when it was healthy. Sources that leave host.hostname blank (SonicWall,
+  SentinelOne) show hosts as 1. Windows providers that only log now and then (time service,
+  TPM, event log service) look stale even when nothing is wrong. Some rows can carry an
+  @timestamp outside the picker window; the picker doesn't filter on @timestamp alone.
+analyst_notes: >
+  This shows gaps by source, not by host. For a host-level view, each data source folder has an
+  all logs by hostname or by event provider query. For ITDR alone, itdr-coverage-check.yaml
+  confirms a window is covered before trusting a negative hunt result.

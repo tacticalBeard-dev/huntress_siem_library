@@ -154,6 +154,12 @@ The exact `event.provider` value for each source, the fields the queries use, an
 
 ### By data source
 
+**All sources**
+
+| Query | Use it to |
+|---|---|
+| [ingestion-health-by-provider.yaml](All%20Sources/ingestion-health-by-provider.yaml) | See every log source's event count and last event, stalest first |
+
 **ITDR**
 
 | Query | Use it to |
@@ -347,7 +353,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | An IOC sweep | [entra-user-activity-by-actor-ip-address.yaml](ITDR/entra-user-activity-by-actor-ip-address.yaml), [sonicwall-vpn-ioc-login-by-ip.yaml](Sonicwall/sonicwall-vpn-ioc-login-by-ip.yaml) |
 | The ConnectWise Cloud Backup (SkyKick) compromise, October 2026 | [connectwise-cloud-backup-ioc-ip-sweep.yaml](ITDR/connectwise-cloud-backup-ioc-ip-sweep.yaml), [connectwise-cloud-backup-ioc-ip-detail.yaml](ITDR/connectwise-cloud-backup-ioc-ip-detail.yaml), [connectwise-cloud-backup-app-id-sweep.yaml](ITDR/connectwise-cloud-backup-app-id-sweep.yaml), [connectwise-skykick-app-name-search.yaml](ITDR/connectwise-skykick-app-name-search.yaml), then [entra-persistence-operation-inventory.yaml](ITDR/entra-persistence-operation-inventory.yaml) |
 | Proving a negative hunt result | [itdr-coverage-check.yaml](ITDR/itdr-coverage-check.yaml) over the same window |
-| Whether logs are arriving | The "all logs" query for each source above |
+| Whether logs are arriving | [ingestion-health-by-provider.yaml](All%20Sources/ingestion-health-by-provider.yaml), then the "all logs" query for the source |
 
 ## Huntress documentation
 
@@ -380,7 +386,7 @@ Queries use [MITRE ATT&CK](https://attack.mitre.org/) tags where a technique cle
 
 - Tactic: `attack.<tactic_name>`, for example `attack.credential_access`, `attack.persistence`
 - Technique: `attack.t<id>` or `attack.t<id>.<sub>`, for example `attack.t1078`, `attack.t1558.003`
-- Log source: one tag naming the data source, for example `windows.event`, `cisco.duo`, `fortigate`, `microsoft.entra.id`, `sonicwall`, `meraki`, `sentinelone`, `palo.alto`, `watchguard`, `google.workspace`, `huntress.platform`, `ubiquiti`
+- Log source: one tag naming the data source, for example `windows.event`, `cisco.duo`, `fortigate`, `microsoft.entra.id`, `sonicwall`, `meraki`, `sentinelone`, `palo.alto`, `watchguard`, `google.workspace`, `huntress.platform`, `ubiquiti`, and `huntress.siem` for queries that cover every source
 
 Utility and starter queries that don't map to a technique carry only the log source tag.
 
