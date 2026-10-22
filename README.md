@@ -75,7 +75,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Provider | `Syslog-Fortigate` (lowercase g; Huntress's FortiGate doc says `Syslog-FortiGate`, which matches nothing) |
 | Common fields | `event.code`, `fortigate.duser`, `fortigate.src`, `fortigate.dst`, `fortigate.reason`, `fortigate.outcome`, `fortigate.FTNTFGTmethod`, `fortigate.FTNTFGTprofile`, `fortigate.FTNTFGTtunnelid`, `fortigate.FTNTFGTtunnelip` |
 | Traps | `event.name` is only a category label like `event:vpn`. On SSL-VPN events `fortigate.src` is empty and the remote IP is in `source.ip` and `fortigate.dst`. `count_distinct(fortigate.duser)` empties the whole result. Raw message text is in `event.original` (CEF `msg=`). |
-| Codes used | 32001/32002 admin login success/failure, 39426 SSL-VPN login failure, 39424/39947/39948 SSL-VPN tunnel up/up/down, 43008/43009/43010 local auth success/failure/lockout. 37130 is an IPsec phase 2 error, not an SSL-VPN failure. |
+| Codes used | 32001/32002 admin login success/failure, 39426 SSL-VPN login failure, 39424/39947/39948 SSL-VPN tunnel up/up/down, 43008/43009/43010 local auth success/failure/lockout, 44546/44547 configuration changed (`fortigate.FTNTFGTcfgpath` is the section, `fortigate.FTNTFGTcfgattr` the values, `fortigate.sproc` how the admin connected). 37130 is an IPsec phase 2 error, not an SSL-VPN failure. |
 
 ### SonicWall
 
@@ -83,7 +83,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 |---|---|
 | Provider | `Syslog-SonicWall` |
 | Common fields | `event.code` (equals the SonicWall message ID `sonicwall.m`), `sonicwall.msg`, `sonicwall.usr`, `sonicwall.sn` (serial), `sonicwall.src`, `sonicwall.dst`, `sonicwall.note`, `source.ip`, `host.ip` |
-| Traps | `host.hostname` is never populated; identify the firewall by `sonicwall.sn` or `host.ip`. `sonicwall.sess` doesn't exist under that name. Message ID 200 is CLI administrator login denied. SonicWall documents the login and logout codes under the Authentication Access category, so check that category is sent to syslog. |
+| Traps | `host.hostname` is never populated; identify the firewall by `sonicwall.sn` or `host.ip`. `sonicwall.sess` doesn't exist under that name. Message ID 200 is CLI administrator login denied. 1382 is configuration succeeded (the setting is in `sonicwall.msg`), and 994/995 mark a config mode admin session starting and ending. SonicWall documents the login and logout codes under the Authentication Access category, so check that category is sent to syslog. |
 
 ### Meraki MX
 
@@ -217,6 +217,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | [admin-login-from-external-ip.yaml](Fortigate/admin-login-from-external-ip.yaml) | Find successful admin logins from public IPs |
 | [admin-logins-on-any-interface.yaml](Fortigate/admin-logins-on-any-interface.yaml) | List admin login successes and failures |
 | [all-logs-by-hostname.yaml](Fortigate/all-logs-by-hostname.yaml) | Check FortiGate logs are arriving and see the fields |
+| [config-changes.yaml](Fortigate/config-changes.yaml) | Summarize configuration changes by admin and config path |
 | [failed-sslvpn-logins.yaml](Fortigate/failed-sslvpn-logins.yaml) | List failed SSL-VPN logins |
 | [firmware-version-change.yaml](Fortigate/firmware-version-change.yaml) | Find firmware upgrades, downgrades and restores |
 | [local-logins-against-firewall.yaml](Fortigate/local-logins-against-firewall.yaml) | List firewall-local authentication |
@@ -233,6 +234,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | [all-attack-activity.yaml](Sonicwall/all-attack-activity.yaml) | List attacks the firewall dropped (scans, floods, spoofing) |
 | [all-logs-by-hostname.yaml](Sonicwall/all-logs-by-hostname.yaml) | Check SonicWall logs are arriving and see the fields |
 | [cli-admin-login-denied.yaml](Sonicwall/cli-admin-login-denied.yaml) | Rank sources of failed CLI admin logins (ID 200) |
+| [config-changes.yaml](Sonicwall/config-changes.yaml) | List configuration changes and config mode admin sessions |
 | [failed-logins.yaml](Sonicwall/failed-logins.yaml) | List failed logins |
 | [sonicwall-vpn-ioc-login-by-ip.yaml](Sonicwall/sonicwall-vpn-ioc-login-by-ip.yaml) | Sweep for published SonicWall VPN attacker IPs |
 | [successful-sslvpn-user-login.yaml](Sonicwall/successful-sslvpn-user-login.yaml) | List successful SSL-VPN logins |
@@ -335,7 +337,7 @@ The exact `event.provider` value for each source, the fields the queries use, an
 | Device code phishing | [oauth-device-code-flow-authentication.yaml](ITDR/oauth-device-code-flow-authentication.yaml) |
 | MFA fatigue | [mfa-push-fatigue-deny-then-allow.yaml](Cisco%20Duo/mfa-push-fatigue-deny-then-allow.yaml), [duo-authentication-failure-spike.yaml](Cisco%20Duo/duo-authentication-failure-spike.yaml) |
 | Password spraying or brute force | [entra-password-spray-by-ip.yaml](ITDR/entra-password-spray-by-ip.yaml), [sign-in-success-after-failures.yaml](ITDR/sign-in-success-after-failures.yaml), [entra-account-lockouts.yaml](ITDR/entra-account-lockouts.yaml), [entra-user-login-invalid-username-or-password.yaml](ITDR/entra-user-login-invalid-username-or-password.yaml), [ssl-vpn-auth-failure-spike.yaml](Fortigate/ssl-vpn-auth-failure-spike.yaml), [account-logon-failed.yaml](Windows%20Event/account-logon-failed.yaml) |
-| An exposed firewall admin interface | [admin-logins-on-any-interface.yaml](Fortigate/admin-logins-on-any-interface.yaml), [admin-login-from-external-ip.yaml](Fortigate/admin-login-from-external-ip.yaml), [admin-wan-login.yaml](Sonicwall/admin-wan-login.yaml), [cli-admin-login-denied.yaml](Sonicwall/cli-admin-login-denied.yaml), [successful-logons.yaml](WatchGuard/successful-logons.yaml) |
+| An exposed firewall admin interface | [admin-logins-on-any-interface.yaml](Fortigate/admin-logins-on-any-interface.yaml), [admin-login-from-external-ip.yaml](Fortigate/admin-login-from-external-ip.yaml), [admin-wan-login.yaml](Sonicwall/admin-wan-login.yaml), [cli-admin-login-denied.yaml](Sonicwall/cli-admin-login-denied.yaml), [successful-logons.yaml](WatchGuard/successful-logons.yaml), then [config-changes.yaml](Fortigate/config-changes.yaml) and [config-changes.yaml](Sonicwall/config-changes.yaml) for what the admin changed |
 | VPN brute force or credential stuffing | [ssl-vpn-auth-failure-spike.yaml](Fortigate/ssl-vpn-auth-failure-spike.yaml), [failed-logons.yaml](WatchGuard/failed-logons.yaml), [successful-logons.yaml](WatchGuard/successful-logons.yaml) |
 | A device reaching malicious sites | [threat-detections.yaml](Palo%20Alto/threat-detections.yaml), [url-filtering-blocks.yaml](Palo%20Alto/url-filtering-blocks.yaml), [content-filtering-blocks.yaml](Meraki/content-filtering-blocks.yaml) |
 | A firewall firmware change | [firmware-version-change.yaml](Fortigate/firmware-version-change.yaml) |
