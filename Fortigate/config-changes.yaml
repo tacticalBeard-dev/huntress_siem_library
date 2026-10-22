@@ -1,0 +1,68 @@
+title: FortiGate Configuration Changes
+id: 3225507a-3fe7-4c35-9f17-b10b6a966857
+status: Production
+description: >
+  Summarize FortiGate configuration changes by firewall, admin, interface and config path, so
+  an unexpected change (a new admin, a VPN or firewall policy edit) stands out.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/33937884048147"
+  - "https://docs.fortinet.com/document/fortigate/7.4.0/fortios-log-message-reference/44546/44546-log-id-event-config-attr"
+  - "https://attack.mitre.org/techniques/T1562/004/"
+tags:
+  - attack.t1562.004
+  - attack.defense_evasion
+  - fortigate
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-Fortigate"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-Fortigate"
+      AND event.code IN (44546, 44547)
+  | STATS
+      changes = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY host.hostname, fortigate.duser, fortigate.sproc, fortigate.act, fortigate.FTNTFGTcfgpath
+  | SORT
+      last_seen DESC
+expected_result: >
+  A few rows a week per firewall: routine edits by known admins through the GUI or a management
+  platform.
+outcomes:
+  rows: >
+    Each row is one admin making one kind of change (Add, Edit, Delete, Move) to one config path.
+    Look hardest at changes to system.admin (admin accounts), user.local and user.group
+    (VPN users), vpn.ssl and firewall.policy, and at any admin or source IP you don't recognize.
+    For the login that came before a change, run admin-logins-on-any-interface.yaml over the
+    same window.
+  empty: >
+    No configuration changes in the window, or the firewall doesn't send event logs to
+    syslog. Check that the FortiGate's syslog settings include event logging (log ID 44546
+    is a System event).
+  error: >
+    Check the query was pasted whole. Huntress reports parser errors as Not all query parsed or
+    Invalid operator.
+known_limits: >
+  The rows say what was changed, not the old and new values; those are in fortigate.FTNTFGTcfgattr
+  and event.original. Log ID 44548 (action performed, such as running a command or a backup)
+  is left out because it's frequent and carries no config path. Some rows can carry an
+  @timestamp outside the picker window; the picker doesn't filter on @timestamp alone.
+analyst_notes: |
+  44546 is attribute configured and 44547 is object attribute configured.
+  fortigate.duser is the admin account, fortigate.sproc is how they connected (for example
+  GUI(<ip>) for the web console, or fgfm_fgc for changes pushed from FortiManager or
+  FortiGate Cloud), fortigate.act is the action and fortigate.FTNTFGTcfgpath is the
+  configuration section changed.
+  To see the changed values, rerun the WHERE lines with
+  KEEP @timestamp, host.hostname, fortigate.duser, fortigate.FTNTFGTcfgpath, fortigate.FTNTFGTcfgattr
+  instead of the STATS.

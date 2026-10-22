@@ -1,0 +1,61 @@
+title: SonicWall Configuration Changes
+id: 992f96d1-258a-4f6f-b2b3-7bdd6ce3a445
+status: Production
+description: >
+  List SonicWall configuration changes with the admin sessions around them, by firewall and
+  admin, so an unexpected change stands out.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/articles/33940022013843"
+  - "https://www.sonicwall.com/techdocs/pdf/sonicos-6-5-1-log-events-reference-guide.pdf"
+  - "https://attack.mitre.org/techniques/T1562/004/"
+tags:
+  - attack.t1562.004
+  - attack.defense_evasion
+  - sonicwall
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "Syslog-SonicWall"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="Syslog-SonicWall"
+      AND event.code IN (1382, 994, 995)
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY host.ip, sonicwall.sn, sonicwall.usr, event.code, sonicwall.msg
+  | SORT
+      last_seen DESC
+expected_result: >
+  A handful of rows a week per firewall: a config mode session start and end with the changes
+  made in between.
+outcomes:
+  rows: >
+    994 and 995 rows mark an admin entering and leaving config mode; 1382 rows name the setting
+    changed in sonicwall.msg. Check the admin in sonicwall.usr is expected, and look hardest at
+    changes to admin accounts, VPN, SSL VPN and access rules. For the login that came before,
+    run admin-wan-login.yaml and cli-admin-login-denied.yaml over the same window.
+  empty: >
+    No configuration changes in the window, or the firewall doesn't send these events to
+    syslog. Check the firewall's log settings send the System and Configuration categories.
+  error: >
+    Check the query was pasted whole. Huntress reports parser errors as Not all query parsed or
+    Invalid operator.
+known_limits: >
+  sonicwall.msg names the setting, not the old and new values. host.hostname is never populated
+  for SonicWall, so firewalls are identified by host.ip and serial (sonicwall.sn). Some rows can
+  carry an @timestamp outside the picker window; the picker doesn't filter on @timestamp alone.
+analyst_notes: |
+  1382 is Configuration succeeded: <setting>. 994 is Configuration mode administration session
+  started and 995 is the session ended. 997 (non-config mode GUI session started) is left out
+  since it's a read-only session.
+  Line the 1382 rows up against the 994 and 995 times to see which session made each change.
