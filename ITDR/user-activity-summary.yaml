@@ -1,0 +1,67 @@
+title: User Activity Summary
+id: 6646d7cd-e1ed-4632-be06-2fa64f0a634f
+status: Production
+description: >
+  Summarize everything one account did over a window, by workload, operation and client IP,
+  with counts and first and last time seen. A starting point for any account investigation.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+  - "https://attack.mitre.org/techniques/T1078/004/"
+tags:
+  - attack.t1078.004
+  - attack.initial_access
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done. To compare before and after a known event, pick a window that starts well
+  before it.
+placeholders:
+  - "<user@client.com>: the account's UPN in lowercase, for example user@example.com"
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND TO_LOWER(itdr.UserId)=="<user@client.com>"
+  | STATS
+      events = COUNT(*),
+      first_seen = MIN(@timestamp),
+      last_seen = MAX(@timestamp)
+      BY itdr.Workload, itdr.Operation, itdr.ClientIP
+  | SORT
+      events DESC
+expected_result: >
+  Dozens to a few hundred rows for an active user: mail access, file activity, Teams and
+  sign-ins, mostly from a few IPs.
+outcomes:
+  rows: >
+    Read the IPs first. An IP that appears only after a known event (a phishing click, a
+    password reset) is new: check its sign-ins with entra-user-activity-by-actor-ip-address.yaml.
+    Then look for operations that don't fit the user's normal work, such as inbox rules,
+    mailbox permission changes, mass FileDownloaded or new app consents.
+  empty: >
+    No records for this account in the window. Check the UPN is lowercase and complete; guest
+    accounts use a #EXT# form. Use itdr-coverage-check.yaml to confirm ITDR data covers the
+    window before calling it clean.
+  error: >
+    Check the query was pasted whole and every placeholder was replaced. Huntress reports parser
+    errors as Not all query parsed or Invalid operator.
+known_limits: >
+  The results grid shows at most 1,000 rows; if it reaches 1,000, narrow the window. Records
+  with no client IP group under a blank IP. Actions an app takes on the user's behalf without
+  the user's identity carry the app in itdr.UserKey and won't match. Some rows can carry an
+  @timestamp outside the picker window; the picker doesn't filter on @timestamp alone.
+analyst_notes: |
+  itdr.Workload names the service: Exchange, SharePoint, OneDrive, MicrosoftTeams,
+  AzureActiveDirectory and others.
+  After a phishing click, set the window to start a few days before the click. IPs whose
+  first_seen is before the click are the user's normal locations; anything first seen after
+  it needs a closer look.
+  For one session's records, use entra-find-all-events-in-a-session.yaml with the session.id
+  from a sign-in row. For sign-ins only, use user-signin-source-ips.yaml.
