@@ -6,10 +6,11 @@ description: >
   an unexpected change (a new admin, a VPN or firewall policy edit) stands out.
 author: tacticalbeard-dev
 date: 2026/10/21
-modified: 2026/10/21
+modified: 2026/10/22
 references:
   - "https://support.huntress.io/hc/en-us/articles/33937884048147"
   - "https://docs.fortinet.com/document/fortigate/7.4.0/fortios-log-message-reference/44546/44546-log-id-event-config-attr"
+  - "https://docs.fortinet.com/document/fortigate/7.4.0/fortios-log-message-reference/44547/44547-log-id-event-config-obj"
   - "https://attack.mitre.org/techniques/T1562/004/"
 tags:
   - attack.t1562.004

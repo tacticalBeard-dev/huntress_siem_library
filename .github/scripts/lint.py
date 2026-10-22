@@ -79,7 +79,7 @@ def identifying(rel, text, ioc):
     <...>, and only the placeholder domains are allowed; IPs and GUIDs inside a placeholder
     are skipped."""
     for e in EMAIL.findall(text):
-        if not re.search(r"@(example\.(com|net|org)|client\.com)$", e.rstrip(".")):
+        if not re.search(r"@(([\w-]+\.)*example\.(com|net|org)|client\.com)$", e.rstrip("."), re.I):
             report("I1", rel, f"email {e}")
     if ioc:
         return
@@ -92,11 +92,21 @@ def identifying(rel, text, ioc):
             report("I3", rel, f"GUID {g}")
 
 
-def providers_in(query):
-    found = re.findall(r'event\.provider\s*==\s*"([^"]+)"', query)
-    for group in re.findall(r"event\.provider\s+IN\s*\(([^)]*)\)", query, re.I):
-        found += re.findall(r'"([^"]+)"', group)
-    return found
+def provider_mismatches(query, provs):
+    """Provider values the query filters on that logsource.provider doesn't cover.
+    Handles ==, IN (...), TO_LOWER(event.provider)== and LIKE with * wildcards."""
+    exact = re.findall(r'(?<!\()event\.provider\s*==\s*"([^"]+)"', query)
+    for group in re.findall(r"(?<!\()event\.provider\s+IN\s*\(([^)]*)\)", query, re.I):
+        exact += re.findall(r'"([^"]+)"', group)
+    bad = [p for p in exact if p not in provs]
+    lowered = {p.lower() for p in provs}
+    bad += [p for p in re.findall(r'TO_LOWER\(\s*event\.provider\s*\)\s*==\s*"([^"]+)"', query, re.I)
+            if p.lower() not in lowered]
+    for pattern in re.findall(r'event\.provider\s+LIKE\s+"([^"]+)"', query, re.I):
+        rx = re.compile("^" + ".*".join(map(re.escape, pattern.split("*"))) + "$")
+        if not any(rx.match(p) for p in provs):
+            bad.append(pattern)
+    return bad
 
 
 def check_query(repo, path, ids):
@@ -131,9 +141,8 @@ def check_query(repo, path, ids):
     if not provs or not all(isinstance(p, str) and p.strip() for p in provs):
         report("Q3", rel, "logsource.provider must be a string, a list of strings, or any")
     elif prov != "any":
-        for p in providers_in(q):
-            if p not in provs:
-                report("Q3", rel, f"query filters on provider {p!r}, not in logsource.provider")
+        for p in provider_mismatches(q, provs):
+            report("Q3", rel, f"query filters on provider {p!r}, not in logsource.provider")
 
     if re.search(r"\|\s*limit\b", q, re.I):
         report("Q6", rel, "limit in query (any limit reads only the last 4 hours)")
