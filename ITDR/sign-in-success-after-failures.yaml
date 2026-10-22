@@ -1,0 +1,71 @@
+title: Sign-In Success After Failures
+id: e9d1f7bd-54f1-46bd-8c6c-c14d45d6ac9b
+status: Production
+description: >
+  Find IP and account pairs with both failed and successful sign-ins in the window. A guessed or
+  stolen password often shows as failures from an IP followed by a success from the same IP.
+author: tacticalbeard-dev
+date: 2026/10/21
+modified: 2026/10/21
+references:
+  - "https://support.huntress.io/hc/en-us/categories/19906075516051-Huntress-Managed-Identity-Threat-Detection-and-Response-ITDR"
+  - "https://attack.mitre.org/techniques/T1110/"
+  - "https://attack.mitre.org/techniques/T1078/004/"
+tags:
+  - attack.t1110
+  - attack.t1078.004
+  - attack.credential_access
+  - attack.initial_access
+  - microsoft.entra.id
+logsource:
+  language: ESQL
+  platform: Huntress SIEM
+  provider: "ITDR"
+picker: >
+  Any window works; wider windows take longer. Results are complete only once the grid
+  shows Done.
+placeholders: []
+query: >
+  from logs
+  | WHERE
+      event.provider=="ITDR"
+      AND TO_LOWER(itdr.Operation) IN ("userloginfailed", "userloggedin")
+  | EVAL
+      failed = CASE(TO_LOWER(itdr.Operation)=="userloginfailed", 1, 0),
+      succeeded = CASE(TO_LOWER(itdr.Operation)=="userloggedin", 1, 0)
+  | STATS
+      failures = SUM(failed),
+      successes = SUM(succeeded)
+      BY itdr.ClientIP, itdr.UserId
+  | WHERE
+      failures > 0
+      AND successes > 0
+  | SORT
+      failures DESC
+expected_result: >
+  Many rows across a tenant: most are users who mistyped a password and then got it right from
+  their usual IP.
+outcomes:
+  rows: >
+    Each row is one IP and one account with at least one failure and one success. Look hardest
+    at rows with many failures and an IP that isn't the user's normal location (a hosting
+    provider, a VPN service, another country). Confirm the order and what followed with
+    entra-user-activity-by-actor-ip-address.yaml on the IP.
+  empty: >
+    No IP had both a failure and a success for the same account in the window. Use
+    itdr-coverage-check.yaml to confirm ITDR data covers the window before calling it clean.
+  error: >
+    Check the query was pasted whole. Huntress reports parser errors as Not all query parsed or
+    Invalid operator.
+known_limits: >
+  A row shows that both happened in the window, not that the success came after the failures.
+  There are no first or last seen columns: a WHERE after a STATS that includes MIN or MAX of
+  @timestamp returns no rows. Shared IPs (an office NAT, a mobile carrier) pair many accounts.
+  The grid shows at most 1,000 rows, highest failure count first.
+analyst_notes: |
+  The EVAL line turns each sign-in into a 1 or 0 flag so STATS can count failures and successes
+  side by side. Keep each CASE to one condition; AND inside CASE fails to parse. The grid
+  also shows empty failed and succeeded columns from that line; ignore them.
+  Failures include MFA interrupts and Conditional Access blocks, not only wrong passwords. To
+  see why the failures happened, run entra-user-login-failures.yaml for the account.
+  For one user after a phishing click, user-activity-summary.yaml shows which IPs are new.
