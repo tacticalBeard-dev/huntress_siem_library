@@ -392,6 +392,8 @@ Queries use [MITRE ATT&CK](https://attack.mitre.org/) tags where a technique cle
 
 Utility and starter queries that don't map to a technique carry only the log source tag.
 
+Queries that sweep for published IOCs (attacker IPs, app IDs) also carry `ioc`. The lint check skips its public IP and GUID checks only for files with that tag.
+
 | Tag | Tactic | ID |
 |---|---|---|
 | `attack.initial_access` | Initial Access | TA0001 |

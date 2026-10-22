@@ -17,6 +17,7 @@ tags:
   - attack.t1133
   - attack.initial_access
   - sonicwall
+  - ioc
 logsource:
   language: ESQL
   platform: Huntress SIEM

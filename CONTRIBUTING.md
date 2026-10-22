@@ -77,6 +77,7 @@ A query goes in only after it has returned a known result in Huntress SIEM.
 4. **Prove empty means empty.** A query that has never returned a row can't call an empty result clean. If the event is rare, say so in `outcomes.empty` and name any setting it depends on.
 5. **Check the traps.** No `limit`. `*` not `%` in `LIKE`. No `message` searches. Exact provider string and field names, which are case sensitive.
 6. **Wait for Done** before reading the result. For a raw search, scroll until the grid says Done, since older rows load only as you scroll. Take field names from a row's details, not from the grid headers.
+7. **Run the lint.** `pip install pyyaml` once, then `python .github/scripts/lint.py` from the repo root. It checks the template, the traps above, README links and anything that looks like real emails, IPs or IDs. The same check runs on every pull request.
 
 If something behaves differently from the README, open an issue with the query, the picker setting and what you saw. Leave out any client data.
 
@@ -86,10 +87,11 @@ If something behaves differently from the README, open an issue with the query, 
 - Plain, direct wording. Say what the query finds and what to do with a result.
 - Tags follow the [tagging convention](README.md#tagging-convention).
 - Example values must be invented, never copied from real logs: `203.0.113.10` (a documentation IP range), `user@example.com`, `pc01.corp.example.com`, `a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d`.
-- Published IOCs from a public source are fine in an IOC sweep query; cite the source in `references`.
+- Published IOCs from a public source are fine in an IOC sweep query; cite the source in `references` and add the `ioc` tag.
 
 ## Pull request checklist
 
+- [ ] `python .github/scripts/lint.py` reports 0 problems.
 - [ ] One query per file, lowercase kebab-case file name, in the right folder.
 - [ ] Every template field is present and in order, with a new UUIDv4 `id`.
 - [ ] `logsource.provider` is an exact `event.provider` value.

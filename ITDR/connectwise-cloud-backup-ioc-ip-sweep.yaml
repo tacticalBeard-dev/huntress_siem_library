@@ -17,6 +17,7 @@ tags:
   - attack.initial_access
   - attack.credential_access
   - microsoft.entra.id
+  - ioc
 logsource:
   language: ESQL
   platform: Huntress SIEM
